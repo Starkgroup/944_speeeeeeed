@@ -13,7 +13,6 @@
 <body>
     <div class="container">
         <header>
-            <h1>🚗 Speedometer GPS</h1>
             <div class="status" id="status">Bereit zum Starten</div>
         </header>
 
@@ -46,34 +45,32 @@
                     <div class="stat-value" id="distance">0.0 km</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Höhe</div>
-                    <div class="stat-value" id="elevation">0 m</div>
-                </div>
-                <div class="stat-card">
                     <div class="stat-label">Dauer</div>
                     <div class="stat-value" id="duration">00:00:00</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Start</div>
-                    <div class="stat-value editable" id="startLocation" contenteditable="true">Unbekannt</div>
+                    <div class="stat-label">Höhe</div>
+                    <div class="stat-value" id="elevation">0 m</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Ziel</div>
-                    <div class="stat-value editable" id="endLocation" contenteditable="true">Unbekannt</div>
+                    <div class="stat-label">Höhenunterschied</div>
+                    <div class="stat-value" id="elevationGain">+0 m</div>
                 </div>
             </div>
 
             <!-- Control Buttons -->
             <div class="controls">
-                <button id="gpsBtn" class="btn btn-primary">GPS Aktivieren</button>
-                <button id="startBtn" class="btn btn-primary" disabled>Trip Starten</button>
-                <button id="resetBtn" class="btn btn-secondary" disabled>Reset</button>
-                <button id="endBtn" class="btn btn-danger" disabled>Trip Beenden</button>
+                <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
+                <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
+                <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">⏹</button>
             </div>
 
             <!-- Trip History -->
             <div class="history-section">
-                <h3>Trip Historie</h3>
+                <div class="history-header">
+                    <h3>Trip Historie</h3>
+                    <button id="clearAllBtn" class="btn-clear-all" onclick="app.clearAllTrips()" title="Alle Trips löschen">Alle löschen</button>
+                </div>
                 <div class="history-list" id="historyList">
                     <div class="no-trips">Keine Trips gespeichert</div>
                 </div>

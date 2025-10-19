@@ -25,12 +25,12 @@ Eine moderne, mobile Web-Anwendung für GPS-basiertes Geschwindigkeitstracking m
 2. **Webserver starten**: 
    ```bash
    # Mit Python
-   python -m http.server 8000
+   python -m http.server 9443
    
    # Mit Node.js
-   npx serve .
+   npx serve . -p 9443
    ```
-3. **Im Browser öffnen**: `http://localhost:8000`
+3. **Im Browser öffnen**: `http://localhost:9443`
 4. **GPS-Berechtigung erteilen**: Beim ersten Start wird nach GPS-Zugriff gefragt
 5. **Trip starten**: "Trip Starten" Button drücken
 
