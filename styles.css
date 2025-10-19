@@ -131,6 +131,11 @@ header h1 {
     margin: 20px 0;
 }
 
+/* Für mehr als 6 Stat-Cards: 3 Spalten */
+.stats-grid:has(.stat-card:nth-child(7)) {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .stat-card {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -499,6 +504,11 @@ header h1 {
         margin: 15px 0;
     }
     
+    /* Für mehr als 6 Stat-Cards: 3 Spalten auf mobilen Geräten */
+    .stats-grid:has(.stat-card:nth-child(7)) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
     .stat-card {
         padding: 8px;
     }
@@ -596,6 +606,11 @@ header h1 {
     .stats-grid {
         grid-template-columns: 1fr;
         gap: 6px;
+    }
+    
+    /* Für mehr als 6 Stat-Cards: 2 Spalten auf sehr kleinen Geräten */
+    .stats-grid:has(.stat-card:nth-child(7)) {
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .controls {

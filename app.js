@@ -700,6 +700,12 @@ class SpeedometerApp {
         document.getElementById('distance').innerHTML = `${this.tripStats.totalDistance.toFixed(2)} <span class="unit">km</span>`;
         document.getElementById('elevation').innerHTML = `${Math.round(this.tripStats.elevation)} <span class="unit">m</span>`;
         
+        // Min/Max Höhenwerte anzeigen
+        const minElevation = this.tripStats.minElevation !== null ? Math.round(this.tripStats.minElevation) : 0;
+        const maxElevation = this.tripStats.maxElevation !== null ? Math.round(this.tripStats.maxElevation) : 0;
+        document.getElementById('minElevation').innerHTML = `${minElevation} <span class="unit">m</span>`;
+        document.getElementById('maxElevation').innerHTML = `${maxElevation} <span class="unit">m</span>`;
+        
         // Höhenunterschied anzeigen
         const elevationGain = this.tripStats.elevationGain || 0;
         document.getElementById('elevationGain').innerHTML = `+${Math.round(elevationGain)} <span class="unit">m</span>`;
@@ -916,6 +922,8 @@ class SpeedometerApp {
         document.getElementById('maxSpeed').innerHTML = '0 <span class="unit">km/h</span>';
         document.getElementById('distance').innerHTML = '0.0 <span class="unit">km</span>';
         document.getElementById('elevation').innerHTML = '0 <span class="unit">m</span>';
+        document.getElementById('minElevation').innerHTML = '0 <span class="unit">m</span>';
+        document.getElementById('maxElevation').innerHTML = '0 <span class="unit">m</span>';
         document.getElementById('elevationGain').innerHTML = '+0 <span class="unit">m</span>';
         document.getElementById('duration').textContent = '00:00:00';
         
@@ -959,6 +967,8 @@ class SpeedometerApp {
         document.getElementById('maxSpeed').innerHTML = '0 <span class="unit">km/h</span>';
         document.getElementById('distance').innerHTML = '0.0 <span class="unit">km</span>';
         document.getElementById('elevation').innerHTML = '0 <span class="unit">m</span>';
+        document.getElementById('minElevation').innerHTML = '0 <span class="unit">m</span>';
+        document.getElementById('maxElevation').innerHTML = '0 <span class="unit">m</span>';
         document.getElementById('elevationGain').innerHTML = '+0 <span class="unit">m</span>';
         document.getElementById('duration').textContent = '00:00:00';
         
