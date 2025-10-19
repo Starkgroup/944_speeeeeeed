@@ -1,0 +1,400 @@
+/* Reset und Basis-Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #00d4ff, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+}
+
+.status {
+    font-size: 1rem;
+    color: #888;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.status.tracking {
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+}
+
+.status.error {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+/* Speedometer */
+.speedometer-container {
+    display: flex;
+    justify-content: center;
+    margin: 40px 0;
+}
+
+.speedometer {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+    border: 4px solid #333;
+    box-shadow: 
+        0 0 30px rgba(0, 212, 255, 0.3),
+        inset 0 0 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.speedometer-inner {
+    text-align: center;
+    z-index: 2;
+}
+
+.speed-value {
+    font-size: 4rem;
+    font-weight: 700;
+    color: #00d4ff;
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.speed-unit {
+    font-size: 1.2rem;
+    color: #888;
+    font-weight: 500;
+}
+
+.speedometer-ring {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        #00d4ff 0deg,
+        #00ff88 90deg,
+        #ffd700 180deg,
+        #ff6b6b 270deg,
+        #ff6b6b 360deg
+    );
+    z-index: 1;
+}
+
+.speedometer-progress {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #2a2a2a 0%, #1a1a1a 100%);
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin: 30px 0;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.stat-value.editable {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 5px;
+    font-size: 1rem;
+    min-height: 20px;
+    outline: none;
+}
+
+.stat-value.editable:focus {
+    border-color: #00d4ff;
+    background: rgba(0, 212, 255, 0.1);
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 15px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #00d4ff, #0099cc);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+}
+
+.btn-secondary {
+    background: linear-gradient(45deg, #666, #444);
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: linear-gradient(45deg, #777, #555);
+}
+
+.btn-danger {
+    background: linear-gradient(45deg, #ff6b6b, #cc4444);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.btn-danger:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+/* History Section */
+.history-section {
+    margin-top: 40px;
+}
+
+.history-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #00d4ff;
+}
+
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.trip-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.trip-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateX(5px);
+}
+
+.trip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.trip-date {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.trip-route {
+    font-weight: 600;
+    color: #00d4ff;
+    margin-bottom: 10px;
+}
+
+.trip-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.trip-stat {
+    text-align: center;
+}
+
+.trip-stat-label {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.trip-stat-value {
+    color: #fff;
+    font-weight: 600;
+}
+
+.no-trips {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .speedometer {
+        width: 240px;
+        height: 240px;
+    }
+    
+    .speed-value {
+        font-size: 3.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+    
+    .btn {
+        min-width: auto;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 255, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 212, 255, 0.7);
+}
+
+/* Animationen */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.speedometer.tracking {
+    animation: pulse 2s infinite;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #00d4ff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+

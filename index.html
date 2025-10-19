@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speedometer GPS Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Speedometer GPS</h1>
+            <div class="status" id="status">Bereit zum Starten</div>
+        </header>
+
+        <main>
+            <!-- Speedometer -->
+            <div class="speedometer-container">
+                <div class="speedometer">
+                    <div class="speedometer-inner">
+                        <div class="speed-value" id="currentSpeed">0</div>
+                        <div class="speed-unit">km/h</div>
+                    </div>
+                    <div class="speedometer-ring">
+                        <div class="speedometer-progress" id="speedProgress"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trip Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Durchschnitt</div>
+                    <div class="stat-value" id="avgSpeed">0 km/h</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Höchstgeschwindigkeit</div>
+                    <div class="stat-value" id="maxSpeed">0 km/h</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Distanz</div>
+                    <div class="stat-value" id="distance">0.0 km</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Höhe</div>
+                    <div class="stat-value" id="elevation">0 m</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Dauer</div>
+                    <div class="stat-value" id="duration">00:00:00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Start</div>
+                    <div class="stat-value editable" id="startLocation" contenteditable="true">Unbekannt</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Ziel</div>
+                    <div class="stat-value editable" id="endLocation" contenteditable="true">Unbekannt</div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button id="gpsBtn" class="btn btn-primary">GPS Aktivieren</button>
+                <button id="startBtn" class="btn btn-primary" disabled>Trip Starten</button>
+                <button id="resetBtn" class="btn btn-secondary" disabled>Reset</button>
+                <button id="endBtn" class="btn btn-danger" disabled>Trip Beenden</button>
+            </div>
+
+            <!-- Trip History -->
+            <div class="history-section">
+                <h3>Trip Historie</h3>
+                <div class="history-list" id="historyList">
+                    <div class="no-trips">Keine Trips gespeichert</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/sql.js@1.8.0/dist/sql-wasm.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
