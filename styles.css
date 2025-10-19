@@ -18,6 +18,14 @@ body {
     margin: 0 auto;
     padding: 10px;
     min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-content {
+    width: 100%;
+    max-width: 100%;
 }
 
 /* Header */
@@ -42,7 +50,7 @@ header h1 {
     padding: 6px 12px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 15px;
-    display: inline-block;
+    display: none;
 }
 
 .status.tracking {
@@ -207,31 +215,27 @@ header h1 {
     mix-blend-mode: screen;
 }
 
-/* Statistics Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+/* Statistics Rows */
+.stats-row {
+    display: flex;
     gap: 10px;
-    margin: 20px 0;
-}
-
-/* Für mehr als 6 Stat-Cards: 3 Spalten */
-.stats-grid:has(.stat-card:nth-child(7)) {
-    grid-template-columns: repeat(2, 1fr);
+    margin: 10px 0;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 12px;
+    background: none;
+    border: none;
+    border-radius: 0;
+    padding: 8px;
     text-align: center;
-    backdrop-filter: blur(10px);
     transition: all 0.3s ease;
+    flex: 1;
+    min-width: 80px;
 }
 
 .stat-card:hover {
-    background: rgba(255, 255, 255, 0.08);
     transform: translateY(-2px);
 }
 
@@ -265,11 +269,14 @@ header h1 {
     z-index: 10000;
     width: 60px;
     height: 60px;
-    border-radius: 50%;
+    border-radius: 0;
     font-size: 1.4rem;
-    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.5);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
-    border: 3px solid rgba(255, 255, 255, 0.2);
+    border: none;
+    border-bottom: 2px solid white;
+    background: none;
+    color: white;
 }
 
 .gyro-button.hidden {
@@ -285,15 +292,11 @@ header h1 {
 }
 
 .timing-card.ready {
-    border: 3px solid #2d5a2d;
-    background: rgba(45, 90, 45, 0.1);
-    box-shadow: 0 0 15px rgba(45, 90, 45, 0.3);
+    border-bottom: 2px solid #2d5a2d;
 }
 
 .timing-card.tracking {
-    border: 3px solid #8b0000;
-    background: rgba(139, 0, 0, 0.1);
-    box-shadow: 0 0 15px rgba(139, 0, 0, 0.3);
+    border-bottom: 2px solid #8b0000;
     animation: timingPulse 1s infinite;
 }
 
@@ -340,8 +343,9 @@ header h1 {
 .controls {
     display: flex;
     gap: 10px;
-    margin: 20px 0;
+    margin: 10px 0 20px 0;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .btn {
@@ -351,7 +355,8 @@ header h1 {
     min-width: 60px;
     padding: 0;
     border: none;
-    border-radius: 10px;
+    border-radius: 0;
+    border-bottom: 2px solid white;
     font-size: 1.5rem;
     font-weight: 600;
     cursor: pointer;
@@ -359,6 +364,8 @@ header h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .btn:disabled {
@@ -367,71 +374,57 @@ header h1 {
 }
 
 .btn-primary {
-    background: linear-gradient(45deg, #666, #444);
-    color: #ccc;
-    box-shadow: 0 4px 15px rgba(102, 102, 102, 0.2);
+    color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: linear-gradient(45deg, #777, #555);
-    box-shadow: 0 6px 20px rgba(102, 102, 102, 0.3);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-secondary {
-    background: linear-gradient(45deg, #666, #444);
-    color: #ccc;
+    color: white;
 }
 
 .btn-secondary:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: linear-gradient(45deg, #777, #555);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-danger {
-    background: linear-gradient(45deg, #666, #444);
-    color: #ccc;
-    box-shadow: 0 4px 15px rgba(102, 102, 102, 0.2);
+    color: white;
 }
 
 .btn-danger:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: linear-gradient(45deg, #777, #555);
-    box-shadow: 0 6px 20px rgba(102, 102, 102, 0.3);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-motion {
-    background: linear-gradient(45deg, #4CAF50, #45a049);
     color: white;
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
 .btn-motion:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: linear-gradient(45deg, #5CBF60, #55b059);
-    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-motion.active {
-    background: linear-gradient(45deg, #ff6b6b, #ff5252);
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
 }
 
 .btn-motion.active:hover:not(:disabled) {
-    background: linear-gradient(45deg, #ff7b7b, #ff6262);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 .btn-history {
-    background: linear-gradient(45deg, #2196F3, #1976D2);
     color: white;
-    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
 }
 
 .btn-history:hover:not(:disabled) {
     transform: translateY(-2px);
-    background: linear-gradient(45deg, #42A5F5, #1E88E5);
-    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* Simulation Controls */
@@ -753,15 +746,9 @@ header h1 {
         font-size: 0.9rem;
     }
     
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .stats-row {
         gap: 8px;
-        margin: 15px 0;
-    }
-    
-    /* Für mehr als 6 Stat-Cards: 2 Spalten auf mobilen Geräten */
-    .stats-grid:has(.stat-card:nth-child(7)) {
-        grid-template-columns: repeat(2, 1fr);
+        margin: 8px 0;
     }
     
     .stat-card {
@@ -793,7 +780,7 @@ header h1 {
     .controls {
         flex-direction: row;
         gap: 8px;
-        margin: 15px 0;
+        margin: 8px 0 15px 0;
     }
     
     .btn {
@@ -802,6 +789,10 @@ header h1 {
         min-width: 50px;
         padding: 0;
         font-size: 1.2rem;
+        border-radius: 0;
+        border-bottom: 2px solid white;
+        background: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
     
     .history-section {
@@ -858,14 +849,9 @@ header h1 {
         font-size: 2.5rem;
     }
     
-    .stats-grid {
-        grid-template-columns: 1fr;
+    .stats-row {
         gap: 6px;
-    }
-    
-    /* Für mehr als 6 Stat-Cards: 2 Spalten auf sehr kleinen Geräten */
-    .stats-grid:has(.stat-card:nth-child(7)) {
-        grid-template-columns: repeat(2, 1fr);
+        margin: 6px 0;
     }
     
     .controls {
@@ -879,6 +865,10 @@ header h1 {
         min-width: 55px;
         padding: 0;
         font-size: 1.3rem;
+        border-radius: 0;
+        border-bottom: 2px solid white;
+        background: none;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
 }
 

@@ -1357,6 +1357,9 @@ class SpeedometerApp {
             options
         );
 
+        // Starte UI-Update-Timer
+        this.startUIUpdateTimer();
+
         // Hole sofort die aktuelle Position für Start-Ort
         this.getCurrentPosition().then((position) => {
             if (position && position.coords) {

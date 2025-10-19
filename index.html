@@ -12,8 +12,16 @@
 </head>
 <body>
     <div class="container">
+        <div class="main-content">
+            <main>
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
+                <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
+                <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">■</button>
+                <button id="historyBtn" class="btn btn-history" title="Trip Historie anzeigen">Ξ</button>
+            </div>
 
-        <main>
             <!-- Speedometer -->
             <div class="speedometer-container">
                 <div class="speedometer">
@@ -37,59 +45,63 @@
             </div>
 
             <!-- Trip Statistics -->
-            <div class="stats-grid">
+            <!-- Speed Stats Row -->
+            <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-label">Durchschnitt</div>
+                    <div class="stat-label">V.Avg</div>
                     <div class="stat-value" id="avgSpeed">0 <span class="unit">km/h</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Höchstgeschwindigkeit</div>
+                    <div class="stat-label">V.Max</div>
                     <div class="stat-value" id="maxSpeed">0 <span class="unit">km/h</span></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Distanz</div>
+                    <div class="stat-label">Dist</div>
                     <div class="stat-value" id="distance">0.0 <span class="unit">km</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Dauer</div>
-                    <div class="stat-value" id="duration">00:00:00</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Höhe</div>
-                    <div class="stat-value" id="elevation">0 <span class="unit">m</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Höhenunterschied</div>
-                    <div class="stat-value" id="elevationGain">+0 <span class="unit">m</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Min Höhe</div>
-                    <div class="stat-value" id="minElevation">0 <span class="unit">m</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Max Höhe</div>
-                    <div class="stat-value" id="maxElevation">0 <span class="unit">m</span></div>
-                </div>
-                <div class="stat-card timing-card" id="timing0to100">
-                    <div class="stat-label">0-100 Zeit</div>
-                    <div class="stat-value" id="timing0to100Value">-- <span class="unit">s</span></div>
-                </div>
-                <div class="stat-card timing-card" id="timing50to120">
-                    <div class="stat-label">50-120 Zeit</div>
-                    <div class="stat-value" id="timing50to120Value">-- <span class="unit">s</span></div>
-                </div>
-                <div class="stat-card timing-card" id="timingQuarterMile">
-                    <div class="stat-label">Quarter Mile</div>
-                    <div class="stat-value" id="timingQuarterMileValue">-- <span class="unit">s</span></div>
                 </div>
             </div>
 
-            <!-- Control Buttons -->
-            <div class="controls">
-                <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
-                <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
-                <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">■</button>
-                <button id="historyBtn" class="btn btn-history" title="Trip Historie anzeigen">📊</button>
+            <!-- Time Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-value" id="duration">00:00:00</div>
+                </div>
+            </div>
+
+            <!-- Elevation Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-label">Elev</div>
+                    <div class="stat-value" id="elevation">0 <span class="unit">m</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">+/-</div>
+                    <div class="stat-value" id="elevationGain">+0 <span class="unit">m</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Min</div>
+                    <div class="stat-value" id="minElevation">0 <span class="unit">m</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Max</div>
+                    <div class="stat-value" id="maxElevation">0 <span class="unit">m</span></div>
+                </div>
+            </div>
+
+            <!-- Race Functions Row -->
+            <div class="stats-row">
+                <div class="stat-card timing-card" id="timing0to100">
+                    <div class="stat-label">0-100</div>
+                    <div class="stat-value" id="timing0to100Value">-- <span class="unit">s</span></div>
+                </div>
+                <div class="stat-card timing-card" id="timing50to120">
+                    <div class="stat-label">50-120</div>
+                    <div class="stat-value" id="timing50to120Value">-- <span class="unit">s</span></div>
+                </div>
+                <div class="stat-card timing-card" id="timingQuarterMile">
+                    <div class="stat-label">¼ Mile</div>
+                    <div class="stat-value" id="timingQuarterMileValue">-- <span class="unit">s</span></div>
+                </div>
             </div>
             
             <!-- Speed Simulation Button 
@@ -120,7 +132,8 @@
             </div>
             <div class="status" id="status">Bereit zum Starten</div>
 
-        </main>
+            </main>
+        </div>
     </div>
 
 
