@@ -22,6 +22,8 @@ class SpeedometerApp {
         this.simulationInterval = null;
         this.motionEnabled = false;
         this.motionListeners = [];
+        this.globalEventListeners = []; // Für globale Event-Listener
+        this.fallbackEventListeners = []; // Für Fallback Event-Listener
         this.blobPhysics = {
             position: { x: 0, y: 0 },
             velocity: { x: 0, y: 0 },
@@ -145,8 +147,20 @@ class SpeedometerApp {
             console.log(`Datenbank gespeichert (${Math.round(dataSize/1024)}KB)`);
         } catch (error) {
             console.error('Fehler beim Speichern der Datenbank:', error);
-            // Bei Speicherfehler: Lösche alte Daten
-            this.cleanupOldTrips();
+            
+            // Spezifische Fehlerbehandlung
+            if (error.name === 'QuotaExceededError') {
+                console.warn('LocalStorage voll - führe Cleanup durch');
+                this.cleanupOldTrips();
+                this.updateStatus('Speicher voll - alte Daten gelöscht', 'error');
+            } else if (error.name === 'SecurityError') {
+                console.error('LocalStorage-Zugriff verweigert');
+                this.updateStatus('Speicher-Zugriff verweigert', 'error');
+            } else {
+                // Bei anderen Fehlern: Lösche alte Daten
+                this.cleanupOldTrips();
+                this.updateStatus('Speicher-Fehler - Daten bereinigt', 'error');
+            }
         }
     }
 
@@ -244,41 +258,29 @@ class SpeedometerApp {
             return;
         }
 
-        // Prüfe GPS-Berechtigung periodisch
-        this.gpsCheckInterval = setInterval(async () => {
-            // Stoppe Prüfung, wenn GPS bereits aktiviert wurde
-            if (this.gpsPermissionGranted) {
-                clearInterval(this.gpsCheckInterval);
-                return;
-            }
+        // Prüfe GPS-Berechtigung nur einmal beim Start, nicht kontinuierlich
+        this.checkGPSPermissionOnce();
+    }
 
-            try {
-                const position = await this.getCurrentPosition();
-                if (position && !this.gpsPermissionGranted) {
-                    this.gpsPermissionGranted = true;
-                    clearInterval(this.gpsCheckInterval);
-                    this.updateStatus('GPS aktiviert - Bereit zum Starten', '');
-                    document.getElementById('startBtn').disabled = false;
-                }
-            } catch (error) {
-                // Prüfe den spezifischen Fehlertyp
-                if (error.code === error.PERMISSION_DENIED) {
-                    if (!this.gpsPermissionGranted) {
-                        this.updateStatus('GPS-Berechtigung erforderlich - Bitte erlauben Sie den Standortzugriff', 'error');
-                    }
-                } else if (error.code === error.POSITION_UNAVAILABLE) {
-                    // Position nicht verfügbar, aber Berechtigung könnte erteilt sein
-                    if (!this.gpsPermissionGranted) {
-                        this.updateStatus('GPS wird initialisiert...', 'tracking');
-                    }
-                } else if (error.code === error.TIMEOUT) {
-                    // Timeout - Berechtigung könnte erteilt sein, aber Position nicht rechtzeitig erhalten
-                    if (!this.gpsPermissionGranted) {
-                        this.updateStatus('GPS wird initialisiert...', 'tracking');
-                    }
-                }
+    // Einmalige GPS-Berechtigungsprüfung beim Start
+    async checkGPSPermissionOnce() {
+        try {
+            const position = await this.getCurrentPosition();
+            if (position && !this.gpsPermissionGranted) {
+                this.gpsPermissionGranted = true;
+                this.updateStatus('GPS aktiviert - Bereit zum Starten', '');
+                document.getElementById('startBtn').disabled = false;
             }
-        }, 3000); // Alle 3 Sekunden prüfen
+        } catch (error) {
+            // Prüfe den spezifischen Fehlertyp
+            if (error.code === error.PERMISSION_DENIED) {
+                this.updateStatus('GPS-Berechtigung erforderlich - Bitte erlauben Sie den Standortzugriff', 'error');
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                this.updateStatus('GPS wird initialisiert...', 'tracking');
+            } else if (error.code === error.TIMEOUT) {
+                this.updateStatus('GPS wird initialisiert...', 'tracking');
+            }
+        }
     }
 
     // Alternative Methode zur GPS-Berechtigungsprüfung
@@ -357,11 +359,11 @@ class SpeedometerApp {
         // Starte kontinuierlichen UI-Update
         this.startUIUpdateTimer();
 
-        // Starte GPS-Tracking mit maximaler Frequenz
+        // Starte GPS-Tracking mit optimierten Einstellungen
         const options = {
             enableHighAccuracy: true,
-            timeout: 3000,     // 3s timeout for faster response
-            maximumAge: 0      // No cache - always get fresh position
+            timeout: 10000,    // 10s timeout für bessere Stabilität
+            maximumAge: 5000   // 5s Cache für weniger GPS-Abfragen
         };
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -370,16 +372,8 @@ class SpeedometerApp {
             options
         );
 
-        // Zusätzlicher aggressiver Position-Request alle 0.5 Sekunden
-        this.aggressivePositionInterval = setInterval(() => {
-            if (this.isTracking && !this.isPaused) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => this.updatePosition(position),
-                    (error) => console.log('Aggressive position error:', error),
-                    { enableHighAccuracy: true, timeout: 1500, maximumAge: 0 }
-                );
-            }
-        }, 500);
+        // Entferne aggressives Position-Tracking - watchPosition reicht aus
+        // Das verhindert GPS-Timeout-Konflikte
 
         // Hole sofort die aktuelle Position für Start-Ort
         this.getCurrentPosition().then((position) => {
@@ -414,6 +408,12 @@ class SpeedometerApp {
             this.aggressivePositionInterval = null;
         }
         
+        // Stoppe GPS-Check-Intervall wenn aktiv
+        if (this.gpsCheckInterval) {
+            clearInterval(this.gpsCheckInterval);
+            this.gpsCheckInterval = null;
+        }
+        
         // Button-Symbol ändern
         document.getElementById('startBtn').textContent = '▶';
         document.getElementById('startBtn').title = 'Fortsetzen';
@@ -433,8 +433,8 @@ class SpeedometerApp {
         // Starte GPS-Tracking wieder
         const options = {
             enableHighAccuracy: true,
-            timeout: 3000,     // 3s timeout for faster response
-            maximumAge: 0      // No cache - always get fresh position
+            timeout: 10000,    // 10s timeout für bessere Stabilität
+            maximumAge: 5000   // 5s Cache für weniger GPS-Abfragen
         };
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -443,16 +443,8 @@ class SpeedometerApp {
             options
         );
 
-        // Zusätzlicher aggressiver Position-Request alle 0.5 Sekunden
-        this.aggressivePositionInterval = setInterval(() => {
-            if (this.isTracking && !this.isPaused) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => this.updatePosition(position),
-                    (error) => console.log('Aggressive position error:', error),
-                    { enableHighAccuracy: true, timeout: 1500, maximumAge: 0 }
-                );
-            }
-        }, 500);
+        // Entferne aggressives Position-Tracking - watchPosition reicht aus
+        // Das verhindert GPS-Timeout-Konflikte
 
         this.updateStatus('Trip fortgesetzt', 'tracking');
         this.updateButtons(true, true, true);
@@ -475,8 +467,8 @@ class SpeedometerApp {
                 (error) => reject(error),
                 {
                     enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 30000
+                    timeout: 15000,    // 15s timeout für bessere Stabilität
+                    maximumAge: 10000  // 10s Cache für weniger GPS-Abfragen
                 }
             );
         });
@@ -876,6 +868,12 @@ class SpeedometerApp {
             this.aggressivePositionInterval = null;
         }
 
+        // Stoppe GPS-Check-Intervall wenn aktiv
+        if (this.gpsCheckInterval) {
+            clearInterval(this.gpsCheckInterval);
+            this.gpsCheckInterval = null;
+        }
+
         // OSM-Lookup für Endpunkt
         const lastPos = this.tripStats.positions[this.tripStats.positions.length - 1];
         if (lastPos) {
@@ -1062,6 +1060,17 @@ class SpeedometerApp {
         if (this.watchId) {
             navigator.geolocation.clearWatch(this.watchId);
             this.watchId = null;
+        }
+
+        // Stoppe alle Intervalle
+        this.stopUIUpdateTimer();
+        if (this.aggressivePositionInterval) {
+            clearInterval(this.aggressivePositionInterval);
+            this.aggressivePositionInterval = null;
+        }
+        if (this.gpsCheckInterval) {
+            clearInterval(this.gpsCheckInterval);
+            this.gpsCheckInterval = null;
         }
 
         this.updateUI();
@@ -1473,21 +1482,30 @@ class SpeedometerApp {
         switch(error.code) {
             case error.PERMISSION_DENIED:
                 message += 'Zugriff verweigert - Bitte erlauben Sie den Standortzugriff in den Browser-Einstellungen';
+                this.isTracking = false;
+                this.updateButtons(false, true, false);
                 break;
             case error.POSITION_UNAVAILABLE:
                 message += 'Position nicht verfügbar - GPS-Signal zu schwach';
+                // Bei POSITION_UNAVAILABLE nicht sofort stoppen, sondern weiter versuchen
                 break;
             case error.TIMEOUT:
-                message += 'Timeout - GPS-Signal wird gesucht...';
+                message += 'Timeout - GPS wird weiter gesucht...';
+                // Bei Timeout nicht sofort stoppen, sondern weiter versuchen
+                console.warn('GPS Timeout - versuche weiter...');
                 break;
             default:
                 message += 'Unbekannter Fehler';
                 break;
         }
         
-        this.updateStatus(message, 'error');
-        this.isTracking = false;
-        this.updateButtons(false, true, false);
+        this.updateStatus(message, error.code === error.PERMISSION_DENIED ? 'error' : 'tracking');
+        
+        // Nur bei PERMISSION_DENIED sofort stoppen
+        if (error.code === error.PERMISSION_DENIED) {
+            this.isTracking = false;
+            this.updateButtons(false, true, false);
+        }
     }
 
     toggleSimulation() {
@@ -1754,99 +1772,139 @@ class SpeedometerApp {
     updateBlobPhysics(accX, accY, accZ) {
         if (!this.blobPhysics.isActive) return;
 
+        // Debug: Log Beschleunigungsdaten
+        console.log('Blob Physics - Acceleration:', { accX, accY, accZ });
+
         // Konvertiere Beschleunigung zu Blob-Position
-        // X-Achse: Links/Rechts Bewegung
-        // Y-Achse: Hoch/Runter Bewegung (Z-Achse der Beschleunigung)
-        const maxG = 1.75; // Maximale G-Kraft (1,75 G)
-        const maxAcc = maxG * 9.81; // 17.15 m/s²
+        // X-Achse: Links/Rechts Bewegung (accX)
+        // Y-Achse: Vor/Zurück Bewegung (accZ) - für Bildschirm: Hoch/Runter
+        const maxG = 2.0; // Maximale G-Kraft (2.0 G)
+        const maxAcc = maxG * 9.81; // 19.62 m/s²
         
         // Begrenze Beschleunigung
         const clampedAccX = Math.max(-maxAcc, Math.min(maxAcc, accX));
         const clampedAccZ = Math.max(-maxAcc, Math.min(maxAcc, accZ));
         
-        // Exponentielle Skalierung: 0-1 G → 0-0.5, 1-1.75 G → 0.5-1.0
+        // Normalisiere Beschleunigung (0-1)
         const normalizedAccX = Math.abs(clampedAccX) / maxAcc; // 0-1
         const normalizedAccZ = Math.abs(clampedAccZ) / maxAcc; // 0-1
         
-        // Exponentielle Funktion: x^2 für sanftere Kurve bei niedrigen Werten
-        // Zusätzliche Glättung durch Historie
-        const exponentialX = Math.pow(normalizedAccX, 1.8); // Erhöht für sanftere Reaktion
-        const exponentialZ = Math.pow(normalizedAccZ, 1.8); // Erhöht für sanftere Reaktion
+        // Exponentielle Skalierung für sanftere Reaktion
+        const exponentialX = Math.pow(normalizedAccX, 1.5);
+        const exponentialZ = Math.pow(normalizedAccZ, 1.5);
         
         // Berechne Bildschirmrand-Offset (Speedometer-Radius)
-        const speedometerRadius = 300; // Geschätzte Radius des Speedometers in px
+        const speedometerRadius = 200; // Reduziert für bessere Sichtbarkeit
         
-        // Zielposition mit exponentieller Skalierung
-        // X-Achse: Gleichgerichtet (links/rechts) - VERTAUSCHT
-        // Y-Achse: Gleichgerichtet (oben/unten)
+        // Zielposition mit korrekter Achsen-Zuordnung
+        // X-Achse: Links/Rechts (accX)
+        // Y-Achse: Hoch/Runter (accZ)
         this.blobPhysics.targetPosition.x = Math.sign(clampedAccX) * exponentialX * speedometerRadius;
         this.blobPhysics.targetPosition.y = Math.sign(clampedAccZ) * exponentialZ * speedometerRadius;
+        
+        // Debug: Log Zielposition
+        console.log('Blob Physics - Target Position:', this.blobPhysics.targetPosition);
         
         // Berechne aktuelle G-Kraft für Anzeige
         const currentG = Math.sqrt(clampedAccX * clampedAccX + clampedAccZ * clampedAccZ) / 9.81;
         
-        // Debug-Info nur bei sehr hoher G-Kraft (reduziert Console-Spam)
-        if (currentG > 1.0) {
-            console.log(`G-Force: ${currentG.toFixed(2)}G`);
+        // Debug-Info bei jeder Bewegung
+        if (currentG > 0.1) {
+            console.log(`G-Force: ${currentG.toFixed(2)}G, Target: (${this.blobPhysics.targetPosition.x.toFixed(1)}, ${this.blobPhysics.targetPosition.y.toFixed(1)})`);
         }
         
         // Speichere G-Kraft für UI-Anzeige
         this.currentGForce = currentG;
+        
+        // Residual Image direkt hier aktualisieren (ohne Blob-Animation)
+        this.updateResidualImageDirectly();
     }
 
     startBlobAnimation() {
-        if (this.blobAnimationId) return;
+        // Stoppe vorherige Animation falls vorhanden
+        this.stopBlobAnimation();
         
+        if (!this.blobPhysics.isActive) return;
+        
+        console.log('Starting new blob animation...');
+        
+        // Neue, optimierte Animation ohne Memory Leaks
         const animate = () => {
-            if (!this.blobPhysics.isActive) return;
+            // Prüfe ob Animation noch aktiv sein soll
+            if (!this.blobPhysics.isActive || !this.motionEnabled) {
+                this.blobAnimationId = null;
+                return;
+            }
             
-            // Schleim-Physik: Verzögerte Rückkehr zur Mitte
-            // Dynamische Kraft basierend auf Distanz für sanftere Bewegung
-            const distanceX = this.blobPhysics.targetPosition.x - this.blobPhysics.position.x;
-            const distanceY = this.blobPhysics.targetPosition.y - this.blobPhysics.position.y;
-            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-            
-            // Adaptive Kraft: Kleine Bewegungen = sanfter, große Bewegungen = schneller
-            const adaptiveForce = Math.min(0.15, Math.max(0.05, distance / 1000));
-            
-            const forceX = distanceX * adaptiveForce;
-            const forceY = distanceY * adaptiveForce;
-            
-            this.blobPhysics.velocity.x += forceX;
-            this.blobPhysics.velocity.y += forceY;
-            
-            // Dämpfung (Schleim-Effekt)
-            this.blobPhysics.velocity.x *= this.blobPhysics.damping;
-            this.blobPhysics.velocity.y *= this.blobPhysics.damping;
-            
-            // Position aktualisieren
-            this.blobPhysics.position.x += this.blobPhysics.velocity.x;
-            this.blobPhysics.position.y += this.blobPhysics.velocity.y;
-            
-            // Blob visuell aktualisieren
-            this.updateBlobVisuals();
-            
-            this.blobAnimationId = requestAnimationFrame(animate);
+            try {
+                // Vereinfachte Physik: Direkte Position ohne komplexe Berechnungen
+                const targetX = this.blobPhysics.targetPosition.x;
+                const targetY = this.blobPhysics.targetPosition.y;
+                
+                // Debug: Log aktuelle und Zielposition
+                if (Math.abs(targetX) > 5 || Math.abs(targetY) > 5) {
+                    console.log(`Blob Animation - Current: (${this.blobPhysics.position.x.toFixed(1)}, ${this.blobPhysics.position.y.toFixed(1)}), Target: (${targetX.toFixed(1)}, ${targetY.toFixed(1)})`);
+                }
+                
+                // Sanfte Interpolation zur Zielposition (70% pro Frame für schnellere Reaktion)
+                this.blobPhysics.position.x += (targetX - this.blobPhysics.position.x) * 0.7;
+                this.blobPhysics.position.y += (targetY - this.blobPhysics.position.y) * 0.7;
+                
+                // Berechne Distanz für Größe und Opazität
+                const distance = Math.sqrt(
+                    this.blobPhysics.position.x * this.blobPhysics.position.x + 
+                    this.blobPhysics.position.y * this.blobPhysics.position.y
+                );
+                
+                // Update Blob-Visuals nur wenn nötig
+                this.updateBlobVisualsOptimized(distance);
+                
+                // Nächster Frame nur wenn aktiv
+                if (this.blobPhysics.isActive) {
+                    this.blobAnimationId = requestAnimationFrame(animate);
+                }
+                
+            } catch (error) {
+                console.error('Blob animation error:', error);
+                this.blobAnimationId = null;
+            }
         };
         
-        animate();
+        // Starte Animation
+        this.blobAnimationId = requestAnimationFrame(animate);
     }
 
     stopBlobAnimation() {
+        // Stoppe Animation
         if (this.blobAnimationId) {
             cancelAnimationFrame(this.blobAnimationId);
             this.blobAnimationId = null;
         }
         
-        // Blob zur Mitte zurücksetzen
+        // Reset Blob-Physik
         this.blobPhysics.position = { x: 0, y: 0 };
         this.blobPhysics.velocity = { x: 0, y: 0 };
         this.blobPhysics.targetPosition = { x: 0, y: 0 };
         
-        this.updateBlobVisuals();
+        // Reset Blob-Visuals zur unsichtbaren Position
+        if (this.blobElement && this.blobCore) {
+            try {
+                this.blobElement.style.width = '5px';
+                this.blobElement.style.height = '5px';
+                this.blobElement.style.opacity = '0.05'; // Fast unsichtbar
+                this.blobElement.style.transform = 'translate(-50%, -50%)';
+                this.blobCore.style.background = 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)';
+            } catch (error) {
+                console.error('Error resetting blob visuals:', error);
+            }
+        }
     }
 
     updateBlobVisuals() {
+        // TROUBLESHOOTING: Blob-Visual-Updates deaktiviert
+        return;
+        
+        /*
         if (!this.blobElement || !this.blobCore) return;
         
         const { x, y } = this.blobPhysics.position;
@@ -1908,6 +1966,81 @@ class SpeedometerApp {
         
         // Residual Image aktualisieren
         this.updateResidualImage(x, y, blobColor, velocity);
+        */
+    }
+
+    // Neue optimierte Blob-Visual-Updates ohne Memory Leaks
+    updateBlobVisualsOptimized(distance) {
+        if (!this.blobElement || !this.blobCore) return;
+        
+        try {
+            const { x, y } = this.blobPhysics.position;
+            const maxDistance = 300; // Speedometer-Radius
+            const normalizedDistance = Math.min(distance / maxDistance, 1);
+            
+            // Minimale Größe und Opazität für unsichtbaren Blob bei keiner Beschleunigung
+            const minSize = 5;
+            const minOpacity = 0.05; // Fast unsichtbar bei keiner Beschleunigung
+            
+            // Dynamische Größe: Größer bei mehr Beschleunigung
+            const baseSize = minSize;
+            const maxSize = 100; // Erhöht für bessere Sichtbarkeit
+            const dynamicSize = baseSize + (normalizedDistance * (maxSize - baseSize));
+            
+            // Dynamische Opazität: Deutlich sichtbar bei Beschleunigung
+            const dynamicOpacity = normalizedDistance > 0.05 ? 
+                Math.max(0.6, 0.6 + (normalizedDistance * 0.4)) : // 0.6-1.0 bei Bewegung
+                minOpacity; // Fast unsichtbar bei keiner Bewegung
+            
+            // Nur DOM-Updates wenn sich Werte signifikant geändert haben
+            const sizeChanged = Math.abs(parseFloat(this.blobElement.style.width) - dynamicSize) > 2;
+            const opacityChanged = Math.abs(parseFloat(this.blobElement.style.opacity) - dynamicOpacity) > 0.05;
+            
+            // Bessere Position-Erkennung
+            let positionChanged = true;
+            try {
+                const currentTransform = this.blobElement.style.transform;
+                if (currentTransform) {
+                    const match = currentTransform.match(/translate\(calc\(-50% \+ ([\d.-]+)px\), calc\(-50% \+ ([\d.-]+)px\)\)/);
+                    if (match) {
+                        const currentX = parseFloat(match[1]);
+                        const currentY = parseFloat(match[2]);
+                        positionChanged = Math.abs(currentX - x) > 3 || Math.abs(currentY - y) > 3;
+                    }
+                }
+            } catch (e) {
+                positionChanged = true; // Bei Fehler immer updaten
+            }
+            
+            if (sizeChanged) {
+                this.blobElement.style.width = `${dynamicSize}px`;
+                this.blobElement.style.height = `${dynamicSize}px`;
+            }
+            
+            if (opacityChanged) {
+                this.blobElement.style.opacity = dynamicOpacity;
+            }
+            
+            if (positionChanged) {
+                this.blobElement.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                console.log(`Blob Visual Update - Position: (${x.toFixed(1)}, ${y.toFixed(1)}), Size: ${dynamicSize.toFixed(1)}px, Opacity: ${dynamicOpacity.toFixed(2)}`);
+            }
+            
+            // Vereinfachte Farbe basierend auf Geschwindigkeit
+            const currentSpeed = this.tripStats.currentSpeed || 0;
+            const blobColor = this.calculateSpeedColor(currentSpeed);
+            
+            // Nur Farbe ändern wenn nötig - sehr verstärkte Farben
+            const currentColor = this.blobCore.style.background;
+            const newColor = `radial-gradient(circle, rgba(${blobColor.r}, ${blobColor.g}, ${blobColor.b}, 1) 0%, rgba(${blobColor.r}, ${blobColor.g}, ${blobColor.b}, 0.8) 30%, rgba(${blobColor.r}, ${blobColor.g}, ${blobColor.b}, 0.6) 60%, rgba(${blobColor.r}, ${blobColor.g}, ${blobColor.b}, 0.4) 100%)`;
+            
+            if (!currentColor.includes(`rgba(${blobColor.r}, ${blobColor.g}, ${blobColor.b}`)) {
+                this.blobCore.style.background = newColor;
+            }
+            
+        } catch (error) {
+            console.error('Blob visual update error:', error);
+        }
     }
 
     updateResidualImage(x, y, color, velocity) {
@@ -1933,6 +2066,36 @@ class SpeedometerApp {
         this.drawResidualImage();
     }
 
+    // Direkte Residual-Image-Aktualisierung ohne Blob-Animation
+    updateResidualImageDirectly() {
+        if (!this.residualCtx || !this.residualCanvas) return;
+        
+        // Verwende targetPosition für Residual Image (ohne Animation)
+        const { x, y } = this.blobPhysics.targetPosition;
+        const centerX = this.residualCanvas.width / 2;
+        const centerY = this.residualCanvas.height / 2;
+        const posX = centerX + x;
+        const posY = centerY + y;
+        
+        // Berechne Geschwindigkeit basierend auf Bewegung
+        const velocity = Math.sqrt(x * x + y * y) / 10; // Skaliert für Residual Image
+        
+        // Adaptive Farbe basierend auf aktueller Geschwindigkeit
+        const currentSpeed = this.tripStats.currentSpeed || 0;
+        const blobColor = this.calculateSpeedColor(currentSpeed);
+        
+        this.residualTrail.push({
+            x: posX,
+            y: posY,
+            color: blobColor,
+            velocity: velocity,
+            timestamp: Date.now()
+        });
+        
+        // Zeichne Residual Image
+        this.drawResidualImage();
+    }
+
     drawResidualImage() {
         if (!this.residualCtx) return;
         
@@ -1949,6 +2112,73 @@ class SpeedometerApp {
             this.residualCtx.beginPath();
             this.residualCtx.arc(latestPoint.x, latestPoint.y, size, 0, Math.PI * 2);
             this.residualCtx.fill();
+        }
+    }
+
+    // Zentrale Cleanup-Methode für alle Event-Listener und Intervalle
+    cleanup() {
+        console.log('Cleaning up all event listeners and intervals...');
+        
+        // Stoppe alle Intervalle
+        this.stopUIUpdateTimer();
+        if (this.aggressivePositionInterval) {
+            clearInterval(this.aggressivePositionInterval);
+            this.aggressivePositionInterval = null;
+        }
+        if (this.gpsCheckInterval) {
+            clearInterval(this.gpsCheckInterval);
+            this.gpsCheckInterval = null;
+        }
+        if (this.simulationInterval) {
+            clearInterval(this.simulationInterval);
+            this.simulationInterval = null;
+        }
+        
+        // Stoppe GPS-Watch
+        if (this.watchId) {
+            navigator.geolocation.clearWatch(this.watchId);
+            this.watchId = null;
+        }
+        
+        // Entferne Motion-Sensor Event-Listener
+        this.motionListeners.forEach(({ type, handler }) => {
+            window.removeEventListener(type, handler);
+        });
+        this.motionListeners = [];
+        
+        // Entferne Fallback Event-Listener
+        this.fallbackEventListeners.forEach(({ element, type, handler }) => {
+            if (element && element.removeEventListener) {
+                element.removeEventListener(type, handler);
+            }
+        });
+        this.fallbackEventListeners = [];
+        
+        // Stoppe Blob-Animation
+        this.stopBlobAnimation();
+        
+        // Memory-Monitoring
+        this.logMemoryUsage();
+        
+        console.log('Cleanup completed');
+    }
+
+    // Memory-Usage Monitoring
+    logMemoryUsage() {
+        if (performance.memory) {
+            const memory = performance.memory;
+            console.log('Memory Usage:', {
+                used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+                total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + 'MB',
+                limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024) + 'MB'
+            });
+            
+            // Warnung bei hohem Memory-Verbrauch
+            const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
+            if (usagePercent > 80) {
+                console.warn('Hoher Memory-Verbrauch:', usagePercent.toFixed(1) + '%');
+                this.updateStatus('Hoher Memory-Verbrauch - App wird optimiert', 'error');
+            }
         }
     }
 
@@ -1977,10 +2207,62 @@ class SpeedometerApp {
     }
 }
 
+// Globale Event-Listener werden nur einmal registriert
+let globalErrorHandler = null;
+let globalRejectionHandler = null;
+
+function setupGlobalEventListeners() {
+    // Entferne alte Listener falls vorhanden
+    if (globalErrorHandler) {
+        window.removeEventListener('error', globalErrorHandler);
+    }
+    if (globalRejectionHandler) {
+        window.removeEventListener('unhandledrejection', globalRejectionHandler);
+    }
+    
+    // Erstelle neue Handler
+    globalErrorHandler = (event) => {
+        console.error('Globaler Fehler:', event.error);
+        if (app) {
+            app.updateStatus('Fehler aufgetreten - App wird neu gestartet', 'error');
+            // Cleanup vor Neustart
+            app.cleanup();
+            // Versuche App neu zu starten nach kurzer Verzögerung
+            setTimeout(() => {
+                try {
+                    app = new SpeedometerApp();
+                } catch (error) {
+                    console.error('Fehler beim Neustart der App:', error);
+                }
+            }, 2000);
+        }
+    };
+    
+    globalRejectionHandler = (event) => {
+        console.error('Unbehandelte Promise-Ablehnung:', event.reason);
+        if (app) {
+            app.updateStatus('Promise-Fehler - App wird stabilisiert', 'error');
+        }
+    };
+    
+    // Registriere neue Listener
+    window.addEventListener('error', globalErrorHandler);
+    window.addEventListener('unhandledrejection', globalRejectionHandler);
+}
+
 // App starten wenn DOM geladen ist
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing SpeedometerApp...');
+    
+    // Cleanup vorherige App falls vorhanden
+    if (app) {
+        app.cleanup();
+    }
+    
+    // Setup globale Event-Listener
+    setupGlobalEventListeners();
+    
     app = new SpeedometerApp();
     console.log('SpeedometerApp initialized:', app);
     
@@ -1992,13 +2274,24 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (enableBtn) {
             console.log('Adding fallback event listener for motion button');
-            enableBtn.addEventListener('click', (e) => {
+            
+            // Fallback Handler für Motion Button
+            const fallbackMotionHandler = (e) => {
                 console.log('Fallback motion button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 if (app) {
                     app.toggleMotionSensors();
                 }
+            };
+            
+            enableBtn.addEventListener('click', fallbackMotionHandler);
+            
+            // Speichere für Cleanup
+            app.fallbackEventListeners.push({
+                element: enableBtn,
+                type: 'click',
+                handler: fallbackMotionHandler
             });
             
             // Teste den Button
@@ -2010,7 +2303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Event Delegation als zusätzlicher Fallback
-        document.addEventListener('click', (e) => {
+        const delegationHandler = (e) => {
             if (e.target && e.target.id === 'enable') {
                 console.log('Event delegation: Motion button clicked');
                 e.preventDefault();
@@ -2019,6 +2312,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     app.toggleMotionSensors();
                 }
             }
+        };
+        
+        document.addEventListener('click', delegationHandler);
+        
+        // Speichere für Cleanup
+        app.fallbackEventListeners.push({
+            element: document,
+            type: 'click',
+            handler: delegationHandler
         });
         
     }, 200);

@@ -135,23 +135,23 @@ header h1 {
     z-index: 1;
     pointer-events: none;
     transition: all 0.1s ease-out;
-    opacity: 0; /* Wird dynamisch von JavaScript gesetzt */
+    opacity: 0.05; /* Fast unsichtbar, wird dynamisch von JavaScript gesetzt */
 }
 
 .blob-core {
     width: 100%;
     height: 100%;
     background: radial-gradient(circle at 30% 30%, 
-        rgba(255, 255, 255, 0.8) 0%, 
-        rgba(200, 200, 200, 0.6) 30%, 
-        rgba(150, 150, 150, 0.4) 60%, 
-        rgba(100, 100, 100, 0.2) 100%);
+        rgba(255, 255, 255, 1) 0%, 
+        rgba(200, 200, 200, 0.8) 30%, 
+        rgba(150, 150, 150, 0.6) 50%, 
+        rgba(100, 100, 100, 0.3) 100%);
     border-radius: 50%;
     box-shadow: 
-        0 0 20px rgba(255, 255, 255, 0.5),
-        inset 0 0 20px rgba(255, 255, 255, 0.2);
+        0 0 30px rgba(255, 255, 255, 0.9),
+        inset 0 0 30px rgba(255, 255, 255, 0.5);
     transition: all 0.15s ease-out;
-    filter: blur(0.5px);
+    filter: blur(0.3px);
 }
 
 /* Blob Verformung basierend auf Motion */
@@ -178,11 +178,11 @@ header h1 {
 .motion-blob::before {
     content: '';
     position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    bottom: -10px;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    top: -15px;
+    left: -15px;
+    right: -15px;
+    bottom: -15px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 80%);
     border-radius: 50%;
     z-index: -1;
     opacity: 0;
