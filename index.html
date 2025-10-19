@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Speedometer GPS Tracker</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
@@ -34,15 +34,15 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Durchschnitt</div>
-                    <div class="stat-value" id="avgSpeed">0 km/h</div>
+                    <div class="stat-value" id="avgSpeed">0 <span class="unit">km/h</span></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Höchstgeschwindigkeit</div>
-                    <div class="stat-value" id="maxSpeed">0 km/h</div>
+                    <div class="stat-value" id="maxSpeed">0 <span class="unit">km/h</span></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Distanz</div>
-                    <div class="stat-value" id="distance">0.0 km</div>
+                    <div class="stat-value" id="distance">0.0 <span class="unit">km</span></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Dauer</div>
@@ -50,11 +50,11 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Höhe</div>
-                    <div class="stat-value" id="elevation">0 m</div>
+                    <div class="stat-value" id="elevation">0 <span class="unit">m</span></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Höhenunterschied</div>
-                    <div class="stat-value" id="elevationGain">+0 m</div>
+                    <div class="stat-value" id="elevationGain">+0 <span class="unit">m</span></div>
                 </div>
             </div>
 
@@ -62,7 +62,16 @@
             <div class="controls">
                 <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
                 <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
-                <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">⏹</button>
+                <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">■</button>
+            </div>
+            
+            <!-- Speed Simulation Button 
+            <div class="simulation-controls">
+                <button id="simulateBtn" class="btn btn-simulate" title="Geschwindigkeit simulieren">🚗</button>
+                <div class="speed-slider-container">
+                    <input type="range" id="speedSlider" min="0" max="300" value="0" class="speed-slider">
+                    <div class="speed-display" id="simulatedSpeed">0 km/h</div>
+                </div>
             </div>
 
             <!-- Trip History -->
