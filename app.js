@@ -59,6 +59,41 @@ class SpeedometerApp {
             positions: []
         };
 
+        // Timing System
+        this.timingSystem = {
+            zeroTo100: {
+                isReady: false,
+                isTracking: false,
+                startTime: null,
+                bestTime: null,
+                speedDecreases: 0,
+                lastSpeed: 0,
+                zeroTime: 0,
+                timeout: 20000 // 20 Sekunden Timeout
+            },
+            fiftyTo120: {
+                isReady: false,
+                isTracking: false,
+                startTime: null,
+                bestTime: null,
+                speedDecreases: 0,
+                lastSpeed: 0,
+                steady50Time: 0,
+                timeout: 20000 // 20 Sekunden Timeout
+            },
+            quarterMile: {
+                isReady: false,
+                isTracking: false,
+                startTime: null,
+                bestTime: null,
+                speedDecreases: 0,
+                lastSpeed: 0,
+                zeroTime: 0,
+                startDistance: 0,
+                timeout: 20000 // 20 Sekunden Timeout
+            }
+        };
+
         this.init();
         this.initBlobPhysics();
         
@@ -213,10 +248,12 @@ class SpeedometerApp {
         const startBtn = document.getElementById('startBtn');
         const resetBtn = document.getElementById('resetBtn');
         const endBtn = document.getElementById('endBtn');
+        const historyBtn = document.getElementById('historyBtn');
         
         if (startBtn) startBtn.addEventListener('click', () => this.startTrip());
         if (resetBtn) resetBtn.addEventListener('click', () => this.resetTrip());
         if (endBtn) endBtn.addEventListener('click', () => this.endTrip());
+        if (historyBtn) historyBtn.addEventListener('click', () => this.showHistoryModal());
         
         // Simulation Event Listeners
         const simulateBtn = document.getElementById('simulateBtn');
@@ -230,6 +267,9 @@ class SpeedometerApp {
         
         // Motion Sensor Event Listeners - mit Verzögerung
         this.bindMotionEvents();
+        
+        // Modal Event Listeners
+        this.bindModalEvents();
     }
 
     bindMotionEvents() {
@@ -249,6 +289,67 @@ class SpeedometerApp {
             });
         } else {
             console.error('Motion button not found! Available buttons:', document.querySelectorAll('button'));
+        }
+    }
+
+    bindModalEvents() {
+        // Modal öffnen/schließen
+        const historyModal = document.getElementById('historyModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => this.hideHistoryModal());
+        }
+        
+        // Modal schließen bei Klick außerhalb
+        if (historyModal) {
+            historyModal.addEventListener('click', (e) => {
+                if (e.target === historyModal) {
+                    this.hideHistoryModal();
+                }
+            });
+        }
+        
+        // ESC-Taste zum Schließen
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && historyModal && historyModal.classList.contains('show')) {
+                this.hideHistoryModal();
+            }
+        });
+    }
+
+    showHistoryModal() {
+        const historyModal = document.getElementById('historyModal');
+        if (historyModal) {
+            historyModal.classList.add('show');
+            // Lade Historie neu
+            this.loadTripHistory();
+        }
+    }
+
+    hideHistoryModal() {
+        const historyModal = document.getElementById('historyModal');
+        if (historyModal) {
+            historyModal.classList.remove('show');
+        }
+    }
+
+    hideGyroButton() {
+        const gyroButton = document.getElementById('enable');
+        if (gyroButton) {
+            gyroButton.classList.add('hidden');
+            // Nach Animation entfernen
+            setTimeout(() => {
+                gyroButton.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    showGyroButton() {
+        const gyroButton = document.getElementById('enable');
+        if (gyroButton) {
+            gyroButton.style.display = 'flex';
+            gyroButton.classList.remove('hidden');
         }
     }
 
@@ -538,6 +639,9 @@ class SpeedometerApp {
             // Berechne Durchschnittsgeschwindigkeit
             this.calculateAverageSpeed();
 
+            // Update Timing System
+            this.updateTimingSystem(currentSpeed);
+
             // Aktualisiere UI
             this.updateUI();
             this.lastPosition = { lat: latitude, lng: longitude };
@@ -779,6 +883,299 @@ class SpeedometerApp {
         this.tripStats.avgSpeed = totalTime > 0 ? this.tripStats.totalDistance / totalTime : 0;
     }
 
+    updateTimingSystem(currentSpeed) {
+        const currentTime = Date.now();
+        
+        // Prüfe G-Force für Start der Zeitmessung
+        const hasAcceleration = this.currentGForce > 0.3; // Mindest-G-Force für Start
+        
+        // 0-100 km/h Timing
+        this.updateZeroTo100Timing(currentSpeed, currentTime, hasAcceleration);
+        
+        // 50-120 km/h Timing
+        this.updateFiftyTo120Timing(currentSpeed, currentTime, hasAcceleration);
+        
+        // Quarter Mile Timing
+        this.updateQuarterMileTiming(currentSpeed, currentTime, hasAcceleration);
+        
+        // Update UI für Timing Cards
+        this.updateTimingUI();
+    }
+
+    updateZeroTo100Timing(speed, currentTime, hasAcceleration) {
+        const timing = this.timingSystem.zeroTo100;
+        
+        // Prüfe ob bei 0 km/h für mehr als 3 Sekunden
+        if (speed < 1) {
+            if (timing.zeroTime === 0) {
+                timing.zeroTime = currentTime;
+            } else if (currentTime - timing.zeroTime > 3000) {
+                timing.isReady = true;
+            }
+        } else {
+            timing.zeroTime = 0;
+            timing.isReady = false;
+        }
+        
+        // Starte Timing wenn bereit und Beschleunigung erkannt
+        if (timing.isReady && hasAcceleration && !timing.isTracking) {
+            timing.isTracking = true;
+            timing.startTime = currentTime;
+            timing.speedDecreases = 0;
+            timing.lastSpeed = speed;
+        }
+        
+        // Tracking-Logik
+        if (timing.isTracking) {
+            // Prüfe auf Timeout (20 Sekunden)
+            if (currentTime - timing.startTime > timing.timeout) {
+                timing.isTracking = false;
+                timing.isReady = false;
+                console.log('0-100 Timing: Timeout nach 20 Sekunden');
+                return;
+            }
+            
+            // Prüfe auf Geschwindigkeitsabnahme
+            if (speed < timing.lastSpeed) {
+                timing.speedDecreases++;
+            } else {
+                timing.speedDecreases = 0;
+            }
+            
+            // Abbruch bei zweimaliger Geschwindigkeitsabnahme
+            if (timing.speedDecreases >= 2) {
+                timing.isTracking = false;
+                timing.isReady = false;
+                return;
+            }
+            
+            // Ziel erreicht
+            if (speed >= 100) {
+                const time = (currentTime - timing.startTime) / 1000;
+                if (!timing.bestTime || time < timing.bestTime) {
+                    timing.bestTime = time;
+                }
+                timing.isTracking = false;
+                timing.isReady = false;
+            }
+            
+            timing.lastSpeed = speed;
+        }
+    }
+
+    updateFiftyTo120Timing(speed, currentTime, hasAcceleration) {
+        const timing = this.timingSystem.fiftyTo120;
+        
+        // Prüfe ob bei 50 km/h für mehr als 3 Sekunden
+        if (speed >= 48 && speed <= 52) {
+            if (timing.steady50Time === 0) {
+                timing.steady50Time = currentTime;
+            } else if (currentTime - timing.steady50Time > 3000) {
+                timing.isReady = true;
+            }
+        } else {
+            timing.steady50Time = 0;
+            timing.isReady = false;
+        }
+        
+        // Starte Timing wenn bereit und Beschleunigung erkannt
+        if (timing.isReady && hasAcceleration && !timing.isTracking) {
+            timing.isTracking = true;
+            timing.startTime = currentTime;
+            timing.speedDecreases = 0;
+            timing.lastSpeed = speed;
+        }
+        
+        // Tracking-Logik
+        if (timing.isTracking) {
+            // Prüfe auf Timeout (20 Sekunden)
+            if (currentTime - timing.startTime > timing.timeout) {
+                timing.isTracking = false;
+                timing.isReady = false;
+                console.log('50-120 Timing: Timeout nach 20 Sekunden');
+                return;
+            }
+            
+            // Prüfe auf Geschwindigkeitsabnahme
+            if (speed < timing.lastSpeed) {
+                timing.speedDecreases++;
+            } else {
+                timing.speedDecreases = 0;
+            }
+            
+            // Abbruch bei zweimaliger Geschwindigkeitsabnahme
+            if (timing.speedDecreases >= 2) {
+                timing.isTracking = false;
+                timing.isReady = false;
+                return;
+            }
+            
+            // Ziel erreicht
+            if (speed >= 120) {
+                const time = (currentTime - timing.startTime) / 1000;
+                if (!timing.bestTime || time < timing.bestTime) {
+                    timing.bestTime = time;
+                }
+                timing.isTracking = false;
+                timing.isReady = false;
+            }
+            
+            timing.lastSpeed = speed;
+        }
+    }
+
+    updateQuarterMileTiming(speed, currentTime, hasAcceleration) {
+        const timing = this.timingSystem.quarterMile;
+        
+        // Prüfe ob bei 0 km/h für mehr als 3 Sekunden
+        if (speed < 1) {
+            if (timing.zeroTime === 0) {
+                timing.zeroTime = currentTime;
+            } else if (currentTime - timing.zeroTime > 3000) {
+                timing.isReady = true;
+            }
+        } else {
+            timing.zeroTime = 0;
+            timing.isReady = false;
+        }
+        
+        // Starte Timing wenn bereit und Beschleunigung erkannt
+        if (timing.isReady && hasAcceleration && !timing.isTracking) {
+            timing.isTracking = true;
+            timing.startTime = currentTime;
+            timing.startDistance = this.tripStats.totalDistance;
+            timing.speedDecreases = 0;
+            timing.lastSpeed = speed;
+        }
+        
+        // Tracking-Logik
+        if (timing.isTracking) {
+            // Prüfe auf Timeout (20 Sekunden)
+            if (currentTime - timing.startTime > timing.timeout) {
+                timing.isTracking = false;
+                timing.isReady = false;
+                console.log('Quarter Mile Timing: Timeout nach 20 Sekunden');
+                return;
+            }
+            
+            // Prüfe auf Geschwindigkeitsabnahme
+            if (speed < timing.lastSpeed) {
+                timing.speedDecreases++;
+            } else {
+                timing.speedDecreases = 0;
+            }
+            
+            // Abbruch bei zweimaliger Geschwindigkeitsabnahme
+            if (timing.speedDecreases >= 2) {
+                timing.isTracking = false;
+                timing.isReady = false;
+                return;
+            }
+            
+            // Quarter Mile erreicht (402.34 Meter)
+            const distanceCovered = this.tripStats.totalDistance - timing.startDistance;
+            if (distanceCovered >= 0.40234) {
+                const time = (currentTime - timing.startTime) / 1000;
+                if (!timing.bestTime || time < timing.bestTime) {
+                    timing.bestTime = time;
+                }
+                timing.isTracking = false;
+                timing.isReady = false;
+            }
+            
+            timing.lastSpeed = speed;
+        }
+    }
+
+    updateTimingUI() {
+        // 0-100 Timing
+        const zeroTo100Card = document.getElementById('timing0to100');
+        const zeroTo100Value = document.getElementById('timing0to100Value');
+        const zeroTo100Timing = this.timingSystem.zeroTo100;
+        
+        if (zeroTo100Timing.isTracking) {
+            zeroTo100Card.classList.add('tracking');
+            zeroTo100Card.classList.remove('ready');
+            const currentTime = (Date.now() - zeroTo100Timing.startTime) / 1000;
+            const remainingTime = Math.max(0, (zeroTo100Timing.timeout / 1000) - currentTime);
+            zeroTo100Value.textContent = `${currentTime.toFixed(2)} s`;
+        } else if (zeroTo100Timing.isReady) {
+            zeroTo100Card.classList.add('ready');
+            zeroTo100Card.classList.remove('tracking');
+            zeroTo100Value.textContent = 'Bereit';
+        } else if (zeroTo100Timing.bestTime) {
+            zeroTo100Card.classList.remove('ready', 'tracking');
+            zeroTo100Value.textContent = `${zeroTo100Timing.bestTime.toFixed(2)} s`;
+        } else {
+            zeroTo100Card.classList.remove('ready', 'tracking');
+            zeroTo100Value.textContent = '-- s';
+        }
+        
+        // 50-120 Timing
+        const fiftyTo120Card = document.getElementById('timing50to120');
+        const fiftyTo120Value = document.getElementById('timing50to120Value');
+        const fiftyTo120Timing = this.timingSystem.fiftyTo120;
+        
+        if (fiftyTo120Timing.isTracking) {
+            fiftyTo120Card.classList.add('tracking');
+            fiftyTo120Card.classList.remove('ready');
+            const currentTime = (Date.now() - fiftyTo120Timing.startTime) / 1000;
+            const remainingTime = Math.max(0, (fiftyTo120Timing.timeout / 1000) - currentTime);
+            fiftyTo120Value.textContent = `${currentTime.toFixed(2)} s`;
+        } else if (fiftyTo120Timing.isReady) {
+            fiftyTo120Card.classList.add('ready');
+            fiftyTo120Card.classList.remove('tracking');
+            fiftyTo120Value.textContent = 'Bereit';
+        } else if (fiftyTo120Timing.bestTime) {
+            fiftyTo120Card.classList.remove('ready', 'tracking');
+            fiftyTo120Value.textContent = `${fiftyTo120Timing.bestTime.toFixed(2)} s`;
+        } else {
+            fiftyTo120Card.classList.remove('ready', 'tracking');
+            fiftyTo120Value.textContent = '-- s';
+        }
+        
+        // Quarter Mile Timing
+        const quarterMileCard = document.getElementById('timingQuarterMile');
+        const quarterMileValue = document.getElementById('timingQuarterMileValue');
+        const quarterMileTiming = this.timingSystem.quarterMile;
+        
+        if (quarterMileTiming.isTracking) {
+            quarterMileCard.classList.add('tracking');
+            quarterMileCard.classList.remove('ready');
+            const currentTime = (Date.now() - quarterMileTiming.startTime) / 1000;
+            const remainingTime = Math.max(0, (quarterMileTiming.timeout / 1000) - currentTime);
+            quarterMileValue.textContent = `${currentTime.toFixed(2)} s`;
+        } else if (quarterMileTiming.isReady) {
+            quarterMileCard.classList.add('ready');
+            quarterMileCard.classList.remove('tracking');
+            quarterMileValue.textContent = 'Bereit';
+        } else if (quarterMileTiming.bestTime) {
+            quarterMileCard.classList.remove('ready', 'tracking');
+            quarterMileValue.textContent = `${quarterMileTiming.bestTime.toFixed(2)} s`;
+        } else {
+            quarterMileCard.classList.remove('ready', 'tracking');
+            quarterMileValue.textContent = '-- s';
+        }
+    }
+
+    resetTimingSystem() {
+        // Reset alle Timing-Systeme
+        Object.keys(this.timingSystem).forEach(key => {
+            const timing = this.timingSystem[key];
+            timing.isReady = false;
+            timing.isTracking = false;
+            timing.startTime = null;
+            timing.speedDecreases = 0;
+            timing.lastSpeed = 0;
+            timing.zeroTime = 0;
+            timing.steady50Time = 0;
+            timing.startDistance = 0;
+        });
+        
+        // Update UI
+        this.updateTimingUI();
+    }
+
     updateUI() {
         // Aktuelle Geschwindigkeit
         const speedElement = document.getElementById('currentSpeed');
@@ -1004,6 +1401,9 @@ class SpeedometerApp {
             positions: []
         };
 
+        // Reset Timing System
+        this.resetTimingSystem();
+
         this.updateUI();
         this.updateStatus('Trip beendet - Bereit für neuen Trip', '');
         
@@ -1053,6 +1453,9 @@ class SpeedometerApp {
             endLocation: 'Unbekannt',
             positions: []
         };
+
+        // Reset Timing System
+        this.resetTimingSystem();
 
         // Residual Image bei vollständigem Reset leeren
         this.clearResidualImage();
@@ -1633,6 +2036,9 @@ class SpeedometerApp {
             this.updateStatus('Motion-Sensoren aktiviert', 'tracking');
             this.startBlobAnimation();
             
+            // Gyro-Button ausblenden nach Motion-Sensor-Aktivierung
+            this.hideGyroButton();
+            
         } catch (error) {
             console.error('Fehler beim Aktivieren der Motion-Sensoren:', error);
             this.updateStatus('Fehler beim Aktivieren der Sensoren', 'error');
@@ -1654,6 +2060,9 @@ class SpeedometerApp {
         this.updateMotionButton();
         this.updateStatus('Motion-Sensoren deaktiviert', '');
         this.stopBlobAnimation();
+        
+        // Gyro-Button wieder anzeigen nach Motion-Sensor-Deaktivierung
+        this.showGyroButton();
     }
 
     updateMotionData(acc, accG, rot, dt) {

@@ -256,6 +256,53 @@ header h1 {
     font-weight: 500;
 }
 
+/* Gyro Button über Speedometer */
+.gyro-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.5);
+    transition: all 0.3s ease;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.gyro-button.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+}
+
+/* Timing Cards */
+.timing-card {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.timing-card.ready {
+    border: 3px solid #2d5a2d;
+    background: rgba(45, 90, 45, 0.1);
+    box-shadow: 0 0 15px rgba(45, 90, 45, 0.3);
+}
+
+.timing-card.tracking {
+    border: 3px solid #8b0000;
+    background: rgba(139, 0, 0, 0.1);
+    box-shadow: 0 0 15px rgba(139, 0, 0, 0.3);
+    animation: timingPulse 1s infinite;
+}
+
+@keyframes timingPulse {
+    0% { box-shadow: 0 0 15px rgba(139, 0, 0, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(139, 0, 0, 0.6); }
+    100% { box-shadow: 0 0 15px rgba(139, 0, 0, 0.3); }
+}
+
 /* Custom Pause Icon */
 .pause-icon {
     display: flex;
@@ -375,6 +422,18 @@ header h1 {
     box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
 }
 
+.btn-history {
+    background: linear-gradient(45deg, #2196F3, #1976D2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+}
+
+.btn-history:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: linear-gradient(45deg, #42A5F5, #1E88E5);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
 /* Simulation Controls */
 .simulation-controls {
     display: flex;
@@ -446,6 +505,96 @@ header h1 {
     color: #4CAF50;
     text-align: center;
     min-width: 80px;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #00d4ff;
+    font-size: 1.5rem;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.history-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px;
 }
 
 /* History Section */

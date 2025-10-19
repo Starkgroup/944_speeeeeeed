@@ -12,9 +12,6 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="status" id="status">Bereit zum Starten</div>
-        </header>
 
         <main>
             <!-- Speedometer -->
@@ -33,6 +30,9 @@
                     </div>
                     <!-- Residual Image Canvas -->
                     <canvas id="residualCanvas" class="residual-canvas"></canvas>
+                    
+                    <!-- Gyro Button (über Speedometer) -->
+                    <button id="enable" class="btn btn-motion gyro-button" title="Motion Sensoren aktivieren">📱</button>
                 </div>
             </div>
 
@@ -70,6 +70,18 @@
                     <div class="stat-label">Max Höhe</div>
                     <div class="stat-value" id="maxElevation">0 <span class="unit">m</span></div>
                 </div>
+                <div class="stat-card timing-card" id="timing0to100">
+                    <div class="stat-label">0-100 Zeit</div>
+                    <div class="stat-value" id="timing0to100Value">-- <span class="unit">s</span></div>
+                </div>
+                <div class="stat-card timing-card" id="timing50to120">
+                    <div class="stat-label">50-120 Zeit</div>
+                    <div class="stat-value" id="timing50to120Value">-- <span class="unit">s</span></div>
+                </div>
+                <div class="stat-card timing-card" id="timingQuarterMile">
+                    <div class="stat-label">Quarter Mile</div>
+                    <div class="stat-value" id="timingQuarterMileValue">-- <span class="unit">s</span></div>
+                </div>
             </div>
 
             <!-- Control Buttons -->
@@ -77,7 +89,7 @@
                 <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
                 <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
                 <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">■</button>
-                <button id="enable" class="btn btn-motion" title="Motion Sensoren aktivieren">📱</button>
+                <button id="historyBtn" class="btn btn-history" title="Trip Historie anzeigen">📊</button>
             </div>
             
             <!-- Speed Simulation Button 
@@ -89,16 +101,25 @@
                 </div>
             </div>
 
-            <!-- Trip History -->
-            <div class="history-section">
-                <div class="history-header">
-                    <h3>Trip Historie</h3>
-                    <button id="clearAllBtn" class="btn-clear-all" onclick="app.clearAllTrips()" title="Alle Trips löschen">Alle löschen</button>
-                </div>
-                <div class="history-list" id="historyList">
-                    <div class="no-trips">Keine Trips gespeichert</div>
+            <!-- Trip History Modal -->
+            <div id="historyModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Trip Historie</h3>
+                        <button id="closeModalBtn" class="btn-close" title="Schließen">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="history-controls">
+                            <button id="clearAllBtn" class="btn-clear-all" onclick="app.clearAllTrips()" title="Alle Trips löschen">Alle löschen</button>
+                        </div>
+                        <div class="history-list" id="historyList">
+                            <div class="no-trips">Keine Trips gespeichert</div>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div class="status" id="status">Bereit zum Starten</div>
+
         </main>
     </div>
 
