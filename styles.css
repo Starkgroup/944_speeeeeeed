@@ -81,7 +81,8 @@ header h1 {
 
 .speedometer-inner {
     text-align: center;
-    z-index: 2;
+    z-index: 10;
+    position: relative;
 }
 
 .speed-value {
@@ -123,6 +124,89 @@ header h1 {
     transition: all 0.3s ease;
 }
 
+/* Motion Blob */
+.motion-blob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+    transition: all 0.1s ease-out;
+    opacity: 0; /* Wird dynamisch von JavaScript gesetzt */
+}
+
+.blob-core {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 30%, 
+        rgba(255, 255, 255, 0.8) 0%, 
+        rgba(200, 200, 200, 0.6) 30%, 
+        rgba(150, 150, 150, 0.4) 60%, 
+        rgba(100, 100, 100, 0.2) 100%);
+    border-radius: 50%;
+    box-shadow: 
+        0 0 20px rgba(255, 255, 255, 0.5),
+        inset 0 0 20px rgba(255, 255, 255, 0.2);
+    transition: all 0.15s ease-out;
+    filter: blur(0.5px);
+}
+
+/* Blob Verformung basierend auf Motion */
+.motion-blob.deforming {
+    transition: all 0.05s ease-out;
+}
+
+.blob-core.deforming {
+    transition: all 0.05s ease-out;
+}
+
+/* Blob Animationen */
+@keyframes blobPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.motion-blob.active .blob-core {
+    animation: blobPulse 2s infinite;
+}
+
+/* Blob Glow Effekt */
+.motion-blob::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.motion-blob.active::before {
+    opacity: 1;
+}
+
+/* Residual Image Canvas */
+.residual-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.1;
+    mix-blend-mode: screen;
+}
+
 /* Statistics Grid */
 .stats-grid {
     display: grid;
@@ -133,7 +217,7 @@ header h1 {
 
 /* Für mehr als 6 Stat-Cards: 3 Spalten */
 .stats-grid:has(.stat-card:nth-child(7)) {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
 }
 
 .stat-card {
@@ -267,6 +351,28 @@ header h1 {
     transform: translateY(-2px);
     background: linear-gradient(45deg, #777, #555);
     box-shadow: 0 6px 20px rgba(102, 102, 102, 0.3);
+}
+
+.btn-motion {
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-motion:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: linear-gradient(45deg, #5CBF60, #55b059);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.btn-motion.active {
+    background: linear-gradient(45deg, #ff6b6b, #ff5252);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.btn-motion.active:hover:not(:disabled) {
+    background: linear-gradient(45deg, #ff7b7b, #ff6262);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
 }
 
 /* Simulation Controls */
@@ -438,7 +544,7 @@ header h1 {
 
 .trip-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     font-size: 0.9rem;
 }
@@ -504,9 +610,9 @@ header h1 {
         margin: 15px 0;
     }
     
-    /* Für mehr als 6 Stat-Cards: 3 Spalten auf mobilen Geräten */
+    /* Für mehr als 6 Stat-Cards: 2 Spalten auf mobilen Geräten */
     .stats-grid:has(.stat-card:nth-child(7)) {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .stat-card {
@@ -680,4 +786,5 @@ header h1 {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
 

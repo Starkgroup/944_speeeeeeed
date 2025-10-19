@@ -27,6 +27,12 @@
                     <div class="speedometer-ring">
                         <div class="speedometer-progress" id="speedProgress"></div>
                     </div>
+                    <!-- Motion Blob -->
+                    <div class="motion-blob" id="motionBlob">
+                        <div class="blob-core"></div>
+                    </div>
+                    <!-- Residual Image Canvas -->
+                    <canvas id="residualCanvas" class="residual-canvas"></canvas>
                 </div>
             </div>
 
@@ -53,16 +59,16 @@
                     <div class="stat-value" id="elevation">0 <span class="unit">m</span></div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-label">Höhenunterschied</div>
+                    <div class="stat-value" id="elevationGain">+0 <span class="unit">m</span></div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-label">Min Höhe</div>
                     <div class="stat-value" id="minElevation">0 <span class="unit">m</span></div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Max Höhe</div>
                     <div class="stat-value" id="maxElevation">0 <span class="unit">m</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Höhenunterschied</div>
-                    <div class="stat-value" id="elevationGain">+0 <span class="unit">m</span></div>
                 </div>
             </div>
 
@@ -71,6 +77,7 @@
                 <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
                 <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
                 <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">■</button>
+                <button id="enable" class="btn btn-motion" title="Motion Sensoren aktivieren">📱</button>
             </div>
             
             <!-- Speed Simulation Button 
@@ -94,6 +101,7 @@
             </div>
         </main>
     </div>
+
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/sql.js@1.8.0/dist/sql-wasm.js"></script>
