@@ -1,4 +1,13 @@
 class SpeedometerApp {
+    // Timing-Parameter (leicht anpassbar)
+    static TARGET_SPEED_0_TO_100 = 100; // km/h - Zielgeschwindigkeit für 0-100 Timing
+    static START_SPEED_50_TO_120 = 50; // km/h - Startgeschwindigkeit für 50-120 Timing
+    static TARGET_SPEED_50_TO_120 = 120; // km/h - Zielgeschwindigkeit für 50-120 Timing
+    static TARGET_DISTANCE_QUARTER_MILE = 402; // Meter - Zielentfernung für Quarter Mile
+    static TIMING_TIMEOUT = 20000; // ms - Timeout für alle Timing-Funktionen (20 Sekunden)
+    static GYRO_ACTIVATION_THRESHOLD = 0.2; // G-Kraft - Schwellenwert für Gyro-Aktivierung
+    static SPEED_INCREASE_THRESHOLD = 2; // km/h pro Sekunde - Schwellenwert für automatische Gyro-Aktivierung
+
     constructor() {
         this.isTracking = false;
         this.isPaused = false;
@@ -39,6 +48,8 @@ class SpeedometerApp {
             z: [],
             maxHistory: 10
         };
+        this.lastSpeed = 0; // Für Geschwindigkeitszunahme-Erkennung
+        this.speedIncreaseThreshold = SpeedometerApp.SPEED_INCREASE_THRESHOLD;
         this.residualCanvas = null;
         this.residualCtx = null;
         this.residualTrail = [];
@@ -69,7 +80,8 @@ class SpeedometerApp {
                 speedDecreases: 0,
                 lastSpeed: 0,
                 zeroTime: 0,
-                timeout: 20000 // 20 Sekunden Timeout
+                targetSpeed: SpeedometerApp.TARGET_SPEED_0_TO_100,
+                timeout: SpeedometerApp.TIMING_TIMEOUT
             },
             fiftyTo120: {
                 isReady: false,
@@ -79,7 +91,8 @@ class SpeedometerApp {
                 speedDecreases: 0,
                 lastSpeed: 0,
                 steady50Time: 0,
-                timeout: 20000 // 20 Sekunden Timeout
+                targetSpeed: SpeedometerApp.TARGET_SPEED_50_TO_120,
+                timeout: SpeedometerApp.TIMING_TIMEOUT
             },
             quarterMile: {
                 isReady: false,
@@ -90,12 +103,14 @@ class SpeedometerApp {
                 lastSpeed: 0,
                 zeroTime: 0,
                 startDistance: 0,
-                timeout: 20000 // 20 Sekunden Timeout
+                targetDistance: SpeedometerApp.TARGET_DISTANCE_QUARTER_MILE,
+                timeout: SpeedometerApp.TIMING_TIMEOUT
             }
         };
 
         this.init();
         this.initBlobPhysics();
+        this.loadBestTimes();
         
         // Test-Funktion für Motion Button
         this.testMotionButton();
@@ -105,7 +120,7 @@ class SpeedometerApp {
         await this.initDatabase();
         this.loadTripHistory();
         this.checkGPSPermission();
-        this.updateStatus('Bereit zum Starten');
+        this.updateStatus('Ready to start');
         
         // Event-Listener mit Verzögerung binden
         setTimeout(() => {
@@ -243,6 +258,25 @@ class SpeedometerApp {
         this.clearDatabase();
     }
 
+    clearBestTimes() {
+        if (!confirm('Möchten Sie wirklich ALLE Bestzeiten löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+            return;
+        }
+        
+        // Lösche Bestzeiten aus dem Timing-System
+        this.timingSystem.zeroTo100.bestTime = null;
+        this.timingSystem.fiftyTo120.bestTime = null;
+        this.timingSystem.quarterMile.bestTime = null;
+        
+        // Lösche aus LocalStorage
+        localStorage.removeItem('speedometer_best_times');
+        
+        // Update UI
+        this.updateTimingUI();
+        
+        console.log('Alle Bestzeiten gelöscht');
+    }
+
     bindEvents() {
         // Standard Buttons
         const startBtn = document.getElementById('startBtn');
@@ -369,7 +403,7 @@ class SpeedometerApp {
             const position = await this.getCurrentPosition();
             if (position && !this.gpsPermissionGranted) {
                 this.gpsPermissionGranted = true;
-                this.updateStatus('GPS aktiviert - Bereit zum Starten', '');
+                this.updateStatus('GPS activated - Ready to start', '');
                 document.getElementById('startBtn').disabled = false;
             }
         } catch (error) {
@@ -396,7 +430,7 @@ class SpeedometerApp {
         try {
             const position = await this.getCurrentPosition();
             this.gpsPermissionGranted = true;
-            this.updateStatus('GPS aktiviert - Bereit zum Starten', '');
+            this.updateStatus('GPS activated - Ready to start', '');
             document.getElementById('startBtn').disabled = false;
             return true;
         } catch (error) {
@@ -464,7 +498,7 @@ class SpeedometerApp {
         const options = {
             enableHighAccuracy: true,
             timeout: 10000,    // 10s timeout für bessere Stabilität
-            maximumAge: 5000   // 5s Cache für weniger GPS-Abfragen
+            maximumAge: 100    // 100ms Cache für präzise Timing-Messungen
         };
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -535,7 +569,7 @@ class SpeedometerApp {
         const options = {
             enableHighAccuracy: true,
             timeout: 10000,    // 10s timeout für bessere Stabilität
-            maximumAge: 5000   // 5s Cache für weniger GPS-Abfragen
+            maximumAge: 100    // 100ms Cache für präzise Timing-Messungen
         };
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -555,7 +589,7 @@ class SpeedometerApp {
         
         // Button-Symbol zurücksetzen
         document.getElementById('startBtn').innerHTML = '<div class="pause-icon"><div class="pause-bar"></div><div class="pause-bar"></div></div>';
-        document.getElementById('startBtn').title = 'Pausieren';
+        document.getElementById('startBtn').title = 'Pause';
     }
 
     getCurrentPosition() {
@@ -582,7 +616,7 @@ class SpeedometerApp {
         if (!this.gpsPermissionGranted) {
             this.gpsPermissionGranted = true;
             clearInterval(this.gpsCheckInterval);
-            this.updateStatus('GPS aktiviert - Bereit zum Starten', '');
+            this.updateStatus('GPS activated - Ready to start', '');
             document.getElementById('startBtn').disabled = false;
         }
         
@@ -612,6 +646,9 @@ class SpeedometerApp {
             this.tripStats.maxSpeed = Math.max(this.tripStats.maxSpeed, this.tripStats.currentSpeed);
             this.tripStats.elevation = altitude || 0;
             
+            // Prüfe Geschwindigkeitszunahme für Gyro-Aktivierung
+            this.checkSpeedIncreaseForGyroActivation(currentSpeed);
+            
             // Höhenverfolgung
             if (altitude !== null && altitude !== undefined) {
                 if (this.tripStats.minElevation === null || altitude < this.tripStats.minElevation) {
@@ -639,8 +676,7 @@ class SpeedometerApp {
             // Berechne Durchschnittsgeschwindigkeit
             this.calculateAverageSpeed();
 
-            // Update Timing System
-            this.updateTimingSystem(currentSpeed);
+            // Timing System wird jetzt im UI-Update-Timer berechnet
 
             // Aktualisiere UI
             this.updateUI();
@@ -857,6 +893,16 @@ class SpeedometerApp {
         // Update UI alle 0.1 Sekunden für ultra-maximale Responsivität
         this.uiUpdateInterval = setInterval(() => {
             if (this.isTracking) {
+                // Timing-Berechnungen mit aktueller Geschwindigkeit
+                const currentSpeed = this.tripStats.currentSpeed;
+                const currentTime = Date.now();
+                const hasAcceleration = this.currentGForce > 0.3;
+                
+                // Timing-Funktionen aufrufen
+                this.updateZeroTo100Timing(currentSpeed, currentTime, hasAcceleration);
+                this.updateFiftyTo120Timing(currentSpeed, currentTime, hasAcceleration);
+                this.updateQuarterMileTiming(currentSpeed, currentTime, hasAcceleration);
+                
                 this.updateUI();
             }
         }, 100);
@@ -883,29 +929,11 @@ class SpeedometerApp {
         this.tripStats.avgSpeed = totalTime > 0 ? this.tripStats.totalDistance / totalTime : 0;
     }
 
-    updateTimingSystem(currentSpeed) {
-        const currentTime = Date.now();
-        
-        // Prüfe G-Force für Start der Zeitmessung
-        const hasAcceleration = this.currentGForce > 0.3; // Mindest-G-Force für Start
-        
-        // 0-100 km/h Timing
-        this.updateZeroTo100Timing(currentSpeed, currentTime, hasAcceleration);
-        
-        // 50-120 km/h Timing
-        this.updateFiftyTo120Timing(currentSpeed, currentTime, hasAcceleration);
-        
-        // Quarter Mile Timing
-        this.updateQuarterMileTiming(currentSpeed, currentTime, hasAcceleration);
-        
-        // Update UI für Timing Cards
-        this.updateTimingUI();
-    }
 
     updateZeroTo100Timing(speed, currentTime, hasAcceleration) {
         const timing = this.timingSystem.zeroTo100;
         
-        // Prüfe ob bei 0 km/h für mehr als 3 Sekunden
+        // Prüfe ob bei 0 km/h für mehr als 3 Sekunden (Ready-Zustand)
         if (speed < 1) {
             if (timing.zeroTime === 0) {
                 timing.zeroTime = currentTime;
@@ -914,15 +942,21 @@ class SpeedometerApp {
             }
         } else {
             timing.zeroTime = 0;
-            timing.isReady = false;
+            // isReady bleibt true, damit Timing starten kann
         }
         
-        // Starte Timing wenn bereit und Beschleunigung erkannt
-        if (timing.isReady && hasAcceleration && !timing.isTracking) {
+        // Starte Timing nur wenn bereit und noch nicht getrackt
+        if (timing.isReady && (hasAcceleration || this.currentGForce > SpeedometerApp.GYRO_ACTIVATION_THRESHOLD) && !timing.isTracking) {
             timing.isTracking = true;
             timing.startTime = currentTime;
             timing.speedDecreases = 0;
             timing.lastSpeed = speed;
+            console.log('0-20 Timing gestartet bei Ready + Beschleunigung/Gyro-Bewegung');
+        }
+        
+        // Debug-Log
+        if (timing.isReady && !timing.isTracking) {
+            console.log(`0-20 Ready: speed=${speed.toFixed(1)}, hasAccel=${hasAcceleration}, gForce=${this.currentGForce.toFixed(2)}`);
         }
         
         // Tracking-Logik
@@ -930,33 +964,21 @@ class SpeedometerApp {
             // Prüfe auf Timeout (20 Sekunden)
             if (currentTime - timing.startTime > timing.timeout) {
                 timing.isTracking = false;
-                timing.isReady = false;
+                timing.isReady = false; // Ready-Zustand deaktivieren nach Timeout
                 console.log('0-100 Timing: Timeout nach 20 Sekunden');
                 return;
             }
             
-            // Prüfe auf Geschwindigkeitsabnahme
-            if (speed < timing.lastSpeed) {
-                timing.speedDecreases++;
-            } else {
-                timing.speedDecreases = 0;
-            }
-            
-            // Abbruch bei zweimaliger Geschwindigkeitsabnahme
-            if (timing.speedDecreases >= 2) {
-                timing.isTracking = false;
-                timing.isReady = false;
-                return;
-            }
-            
             // Ziel erreicht
-            if (speed >= 100) {
+            if (speed >= timing.targetSpeed) {
                 const time = (currentTime - timing.startTime) / 1000;
                 if (!timing.bestTime || time < timing.bestTime) {
                     timing.bestTime = time;
+                    this.saveBestTimes(); // Speichere neue Bestzeit
                 }
                 timing.isTracking = false;
-                timing.isReady = false;
+                timing.isReady = false; // Ready-Zustand deaktivieren nach Abschluss
+                console.log(`0-20 Timing abgeschlossen: ${time.toFixed(2)}s bei ${speed.toFixed(1)} km/h (Ziel: ${timing.targetSpeed} km/h)`);
             }
             
             timing.lastSpeed = speed;
@@ -966,8 +988,8 @@ class SpeedometerApp {
     updateFiftyTo120Timing(speed, currentTime, hasAcceleration) {
         const timing = this.timingSystem.fiftyTo120;
         
-        // Prüfe ob bei 50 km/h für mehr als 3 Sekunden
-        if (speed >= 48 && speed <= 52) {
+        // Prüfe ob bei Start-Geschwindigkeit für mehr als 3 Sekunden (Ready-Zustand)
+        if (speed >= (SpeedometerApp.START_SPEED_50_TO_120 - 2) && speed <= (SpeedometerApp.START_SPEED_50_TO_120 + 2)) {
             if (timing.steady50Time === 0) {
                 timing.steady50Time = currentTime;
             } else if (currentTime - timing.steady50Time > 3000) {
@@ -978,12 +1000,13 @@ class SpeedometerApp {
             timing.isReady = false;
         }
         
-        // Starte Timing wenn bereit und Beschleunigung erkannt
+        // Starte Timing nur wenn bereit und Beschleunigung erkannt
         if (timing.isReady && hasAcceleration && !timing.isTracking) {
             timing.isTracking = true;
             timing.startTime = currentTime;
             timing.speedDecreases = 0;
             timing.lastSpeed = speed;
+            console.log('50-120 Timing gestartet bei Ready + Beschleunigung');
         }
         
         // Tracking-Logik
@@ -991,33 +1014,21 @@ class SpeedometerApp {
             // Prüfe auf Timeout (20 Sekunden)
             if (currentTime - timing.startTime > timing.timeout) {
                 timing.isTracking = false;
-                timing.isReady = false;
+                timing.isReady = false; // Ready-Zustand deaktivieren nach Timeout
                 console.log('50-120 Timing: Timeout nach 20 Sekunden');
                 return;
             }
             
-            // Prüfe auf Geschwindigkeitsabnahme
-            if (speed < timing.lastSpeed) {
-                timing.speedDecreases++;
-            } else {
-                timing.speedDecreases = 0;
-            }
-            
-            // Abbruch bei zweimaliger Geschwindigkeitsabnahme
-            if (timing.speedDecreases >= 2) {
-                timing.isTracking = false;
-                timing.isReady = false;
-                return;
-            }
-            
             // Ziel erreicht
-            if (speed >= 120) {
+            if (speed >= timing.targetSpeed) {
                 const time = (currentTime - timing.startTime) / 1000;
                 if (!timing.bestTime || time < timing.bestTime) {
                     timing.bestTime = time;
+                    this.saveBestTimes(); // Speichere neue Bestzeit
                 }
                 timing.isTracking = false;
-                timing.isReady = false;
+                timing.isReady = false; // Ready-Zustand deaktivieren nach Abschluss
+                console.log(`50-120 Timing abgeschlossen: ${time.toFixed(2)}s bei ${speed.toFixed(1)} km/h (Ziel: ${timing.targetSpeed} km/h)`);
             }
             
             timing.lastSpeed = speed;
@@ -1027,7 +1038,7 @@ class SpeedometerApp {
     updateQuarterMileTiming(speed, currentTime, hasAcceleration) {
         const timing = this.timingSystem.quarterMile;
         
-        // Prüfe ob bei 0 km/h für mehr als 3 Sekunden
+        // Prüfe ob bei 0 km/h für mehr als 3 Sekunden (Ready-Zustand)
         if (speed < 1) {
             if (timing.zeroTime === 0) {
                 timing.zeroTime = currentTime;
@@ -1036,16 +1047,22 @@ class SpeedometerApp {
             }
         } else {
             timing.zeroTime = 0;
-            timing.isReady = false;
+            // isReady bleibt true, damit Timing starten kann
         }
         
-        // Starte Timing wenn bereit und Beschleunigung erkannt
-        if (timing.isReady && hasAcceleration && !timing.isTracking) {
+        // Starte Timing nur wenn bereit und Beschleunigung/Gyro-Bewegung erkannt
+        if (timing.isReady && (hasAcceleration || this.currentGForce > SpeedometerApp.GYRO_ACTIVATION_THRESHOLD) && !timing.isTracking) {
             timing.isTracking = true;
             timing.startTime = currentTime;
             timing.startDistance = this.tripStats.totalDistance;
             timing.speedDecreases = 0;
             timing.lastSpeed = speed;
+            console.log('50m Timing gestartet bei Ready + Beschleunigung/Gyro-Bewegung');
+        }
+        
+        // Debug-Log
+        if (timing.isReady && !timing.isTracking) {
+            console.log(`50m Ready: speed=${speed.toFixed(1)}, hasAccel=${hasAcceleration}, gForce=${this.currentGForce.toFixed(2)}`);
         }
         
         // Tracking-Logik
@@ -1053,34 +1070,24 @@ class SpeedometerApp {
             // Prüfe auf Timeout (20 Sekunden)
             if (currentTime - timing.startTime > timing.timeout) {
                 timing.isTracking = false;
-                timing.isReady = false;
+                timing.isReady = false; // Ready-Zustand deaktivieren nach Timeout
                 console.log('Quarter Mile Timing: Timeout nach 20 Sekunden');
                 return;
             }
             
-            // Prüfe auf Geschwindigkeitsabnahme
-            if (speed < timing.lastSpeed) {
-                timing.speedDecreases++;
-            } else {
-                timing.speedDecreases = 0;
-            }
-            
-            // Abbruch bei zweimaliger Geschwindigkeitsabnahme
-            if (timing.speedDecreases >= 2) {
-                timing.isTracking = false;
-                timing.isReady = false;
-                return;
-            }
-            
-            // Quarter Mile erreicht (402.34 Meter)
+            // 50 Meter erreicht
             const distanceCovered = this.tripStats.totalDistance - timing.startDistance;
-            if (distanceCovered >= 0.40234) {
+            const targetDistanceKm = timing.targetDistance / 1000;
+            console.log(`50m Timing: ${distanceCovered.toFixed(3)}km / ${targetDistanceKm.toFixed(3)}km (${timing.targetDistance}m Ziel)`);
+            if (distanceCovered >= targetDistanceKm) {
                 const time = (currentTime - timing.startTime) / 1000;
                 if (!timing.bestTime || time < timing.bestTime) {
                     timing.bestTime = time;
+                    this.saveBestTimes(); // Speichere neue Bestzeit
                 }
                 timing.isTracking = false;
-                timing.isReady = false;
+                timing.isReady = false; // Ready-Zustand deaktivieren nach Abschluss
+                console.log(`50m Timing abgeschlossen: ${time.toFixed(2)}s bei ${(distanceCovered * 1000).toFixed(1)}m (Ziel: ${timing.targetDistance}m)`);
             }
             
             timing.lastSpeed = speed;
@@ -1099,13 +1106,18 @@ class SpeedometerApp {
             const currentTime = (Date.now() - zeroTo100Timing.startTime) / 1000;
             const remainingTime = Math.max(0, (zeroTo100Timing.timeout / 1000) - currentTime);
             zeroTo100Value.textContent = `${currentTime.toFixed(2)} s`;
+        } else if (zeroTo100Timing.bestTime) {
+            zeroTo100Card.classList.remove('tracking');
+            if (zeroTo100Timing.isReady) {
+                zeroTo100Card.classList.add('ready');
+            } else {
+                zeroTo100Card.classList.remove('ready');
+            }
+            zeroTo100Value.textContent = `${zeroTo100Timing.bestTime.toFixed(2)}s`;
         } else if (zeroTo100Timing.isReady) {
             zeroTo100Card.classList.add('ready');
             zeroTo100Card.classList.remove('tracking');
-            zeroTo100Value.textContent = 'Bereit';
-        } else if (zeroTo100Timing.bestTime) {
-            zeroTo100Card.classList.remove('ready', 'tracking');
-            zeroTo100Value.textContent = `${zeroTo100Timing.bestTime.toFixed(2)} s`;
+            zeroTo100Value.textContent = 'Ready';
         } else {
             zeroTo100Card.classList.remove('ready', 'tracking');
             zeroTo100Value.textContent = '-- s';
@@ -1122,13 +1134,18 @@ class SpeedometerApp {
             const currentTime = (Date.now() - fiftyTo120Timing.startTime) / 1000;
             const remainingTime = Math.max(0, (fiftyTo120Timing.timeout / 1000) - currentTime);
             fiftyTo120Value.textContent = `${currentTime.toFixed(2)} s`;
+        } else if (fiftyTo120Timing.bestTime) {
+            fiftyTo120Card.classList.remove('tracking');
+            if (fiftyTo120Timing.isReady) {
+                fiftyTo120Card.classList.add('ready');
+            } else {
+                fiftyTo120Card.classList.remove('ready');
+            }
+            fiftyTo120Value.textContent = `${fiftyTo120Timing.bestTime.toFixed(2)}s`;
         } else if (fiftyTo120Timing.isReady) {
             fiftyTo120Card.classList.add('ready');
             fiftyTo120Card.classList.remove('tracking');
-            fiftyTo120Value.textContent = 'Bereit';
-        } else if (fiftyTo120Timing.bestTime) {
-            fiftyTo120Card.classList.remove('ready', 'tracking');
-            fiftyTo120Value.textContent = `${fiftyTo120Timing.bestTime.toFixed(2)} s`;
+            fiftyTo120Value.textContent = 'Ready';
         } else {
             fiftyTo120Card.classList.remove('ready', 'tracking');
             fiftyTo120Value.textContent = '-- s';
@@ -1145,13 +1162,18 @@ class SpeedometerApp {
             const currentTime = (Date.now() - quarterMileTiming.startTime) / 1000;
             const remainingTime = Math.max(0, (quarterMileTiming.timeout / 1000) - currentTime);
             quarterMileValue.textContent = `${currentTime.toFixed(2)} s`;
+        } else if (quarterMileTiming.bestTime) {
+            quarterMileCard.classList.remove('tracking');
+            if (quarterMileTiming.isReady) {
+                quarterMileCard.classList.add('ready');
+            } else {
+                quarterMileCard.classList.remove('ready');
+            }
+            quarterMileValue.textContent = `${quarterMileTiming.bestTime.toFixed(2)}s`;
         } else if (quarterMileTiming.isReady) {
             quarterMileCard.classList.add('ready');
             quarterMileCard.classList.remove('tracking');
-            quarterMileValue.textContent = 'Bereit';
-        } else if (quarterMileTiming.bestTime) {
-            quarterMileCard.classList.remove('ready', 'tracking');
-            quarterMileValue.textContent = `${quarterMileTiming.bestTime.toFixed(2)} s`;
+            quarterMileValue.textContent = 'Ready';
         } else {
             quarterMileCard.classList.remove('ready', 'tracking');
             quarterMileValue.textContent = '-- s';
@@ -1348,7 +1370,7 @@ class SpeedometerApp {
         const options = {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 1000
+            maximumAge: 100    // 100ms Cache für präzise Timing-Messungen
         };
 
         this.watchId = navigator.geolocation.watchPosition(
@@ -1415,11 +1437,11 @@ class SpeedometerApp {
         
         // Button-Symbole explizit setzen (da updateButtons() auf isTracking basiert)
         document.getElementById('startBtn').textContent = '▶';
-        document.getElementById('startBtn').title = 'Trip Starten';
+        document.getElementById('startBtn').title = 'Start Trip';
         document.getElementById('resetBtn').textContent = '↻';
         document.getElementById('resetBtn').title = 'Reset';
         document.getElementById('endBtn').textContent = '■';
-        document.getElementById('endBtn').title = 'Trip Beenden';
+        document.getElementById('endBtn').title = 'End Trip';
         
         // Reset UI
         document.getElementById('currentSpeed').textContent = '0';
@@ -1480,7 +1502,7 @@ class SpeedometerApp {
         }
 
         this.updateUI();
-        this.updateStatus('Bereit zum Starten', '');
+        this.updateStatus('Ready to start', '');
         this.updateButtons(false, true, false);
         
         // Reset UI
@@ -1849,13 +1871,13 @@ class SpeedometerApp {
         // Button-Symbol basierend auf Trip-Status setzen
         if (this.isTracking && !this.isPaused) {
             startBtn.innerHTML = '<div class="pause-icon"><div class="pause-bar"></div><div class="pause-bar"></div></div>';
-            startBtn.title = 'Pausieren';
+            startBtn.title = 'Pause';
         } else if (this.isPaused) {
             startBtn.textContent = '▶';
-            startBtn.title = 'Fortsetzen';
+            startBtn.title = 'Resume';
         } else {
             startBtn.textContent = '▶';
-            startBtn.title = 'Trip Starten';
+            startBtn.title = 'Start Trip';
         }
         
         document.getElementById('resetBtn').disabled = !resetEnabled;
@@ -1870,7 +1892,7 @@ class SpeedometerApp {
         const resetBtn = document.getElementById('resetBtn');
         if (this.isTracking) {
             resetBtn.textContent = '↻';
-            resetBtn.title = 'Neu starten';
+            resetBtn.title = 'Restart';
         } else {
             resetBtn.textContent = '↻';
             resetBtn.title = 'Reset';
@@ -2119,6 +2141,32 @@ class SpeedometerApp {
         this.clearResidualCanvas();
     }
 
+    // LocalStorage-Funktionen für Bestwerte
+    saveBestTimes() {
+        const bestTimes = {
+            zeroTo100: this.timingSystem.zeroTo100.bestTime,
+            fiftyTo120: this.timingSystem.fiftyTo120.bestTime,
+            quarterMile: this.timingSystem.quarterMile.bestTime
+        };
+        localStorage.setItem('speedometer_best_times', JSON.stringify(bestTimes));
+        console.log('Bestwerte gespeichert:', bestTimes);
+    }
+
+    loadBestTimes() {
+        try {
+            const saved = localStorage.getItem('speedometer_best_times');
+            if (saved) {
+                const bestTimes = JSON.parse(saved);
+                if (bestTimes.zeroTo100) this.timingSystem.zeroTo100.bestTime = bestTimes.zeroTo100;
+                if (bestTimes.fiftyTo120) this.timingSystem.fiftyTo120.bestTime = bestTimes.fiftyTo120;
+                if (bestTimes.quarterMile) this.timingSystem.quarterMile.bestTime = bestTimes.quarterMile;
+                console.log('Bestwerte geladen:', bestTimes);
+            }
+        } catch (error) {
+            console.error('Fehler beim Laden der Bestwerte:', error);
+        }
+    }
+
     updateOrientationData(alpha, beta, gamma) {
         // Orientierung wird nicht mehr angezeigt
     }
@@ -2209,9 +2257,9 @@ class SpeedometerApp {
         const speedometerRadius = 200; // Reduziert für bessere Sichtbarkeit
         
         // Zielposition mit korrekter Achsen-Zuordnung
-        // X-Achse: Links/Rechts (accX)
+        // X-Achse: Links/Rechts (accX) - INVERTIERT für bessere Gyro-Aktivierung
         // Y-Achse: Hoch/Runter (accZ)
-        this.blobPhysics.targetPosition.x = Math.sign(clampedAccX) * exponentialX * speedometerRadius;
+        this.blobPhysics.targetPosition.x = -Math.sign(clampedAccX) * exponentialX * speedometerRadius; // X-Achse invertiert
         this.blobPhysics.targetPosition.y = Math.sign(clampedAccZ) * exponentialZ * speedometerRadius;
         
         // Debug: Log Zielposition
@@ -2230,6 +2278,23 @@ class SpeedometerApp {
         
         // Residual Image direkt hier aktualisieren (ohne Blob-Animation)
         this.updateResidualImageDirectly();
+    }
+
+    checkSpeedIncreaseForGyroActivation(currentSpeed) {
+        // Prüfe nur wenn Motion-Sensoren noch nicht aktiviert sind
+        if (this.motionEnabled) return;
+        
+        // Berechne Geschwindigkeitszunahme
+        const speedIncrease = currentSpeed - this.lastSpeed;
+        
+        // Aktiviere Gyro bei starker Geschwindigkeitszunahme
+        if (speedIncrease >= this.speedIncreaseThreshold) {
+            console.log(`Geschwindigkeitszunahme erkannt: ${speedIncrease.toFixed(1)} km/h - Aktiviere Motion-Sensoren`);
+            this.startMotionSensors();
+        }
+        
+        // Aktualisiere letzte Geschwindigkeit
+        this.lastSpeed = currentSpeed;
     }
 
     startBlobAnimation() {

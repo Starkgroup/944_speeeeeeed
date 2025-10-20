@@ -623,6 +623,25 @@ header h1 {
     transform: scale(1.05);
 }
 
+.btn-clear-best {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.4);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #ffc107;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.btn-clear-best:hover {
+    background: rgba(255, 193, 7, 0.3);
+    border-color: rgba(255, 193, 7, 0.6);
+    transform: scale(1.05);
+}
+
 .history-list {
     max-height: 300px;
     overflow-y: auto;
@@ -829,6 +848,12 @@ header h1 {
         padding: 4px 8px;
         font-size: 0.75rem;
         align-self: flex-end;
+    }
+    
+    .btn-clear-best {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        margin-left: 4px;
     }
 }
 

@@ -16,10 +16,10 @@
             <main>
             <!-- Control Buttons -->
             <div class="controls">
-                <button id="startBtn" class="btn btn-primary" title="Trip Starten">▶</button>
+                <button id="startBtn" class="btn btn-primary" title="Start Trip">▶</button>
                 <button id="resetBtn" class="btn btn-secondary" disabled title="Reset">↻</button>
-                <button id="endBtn" class="btn btn-danger" disabled title="Trip Beenden">■</button>
-                <button id="historyBtn" class="btn btn-history" title="Trip Historie anzeigen">Ξ</button>
+                <button id="endBtn" class="btn btn-danger" disabled title="End Trip">■</button>
+                <button id="historyBtn" class="btn btn-history" title="Show Trip History">Ξ</button>
             </div>
 
             <!-- Speedometer -->
@@ -40,7 +40,7 @@
                     <canvas id="residualCanvas" class="residual-canvas"></canvas>
                     
                     <!-- Gyro Button (über Speedometer) -->
-                    <button id="enable" class="btn btn-motion gyro-button" title="Motion Sensoren aktivieren">📱</button>
+                    <button id="enable" class="btn btn-motion gyro-button" title="Enable Motion Sensors">📱</button>
                 </div>
             </div>
 
@@ -123,6 +123,7 @@
                     <div class="modal-body">
                         <div class="history-controls">
                             <button id="clearAllBtn" class="btn-clear-all" onclick="app.clearAllTrips()" title="Alle Trips löschen">Alle löschen</button>
+                            <button id="clearBestTimesBtn" class="btn-clear-best" onclick="app.clearBestTimes()" title="Bestzeiten löschen">Bestzeiten löschen</button>
                         </div>
                         <div class="history-list" id="historyList">
                             <div class="no-trips">Keine Trips gespeichert</div>
