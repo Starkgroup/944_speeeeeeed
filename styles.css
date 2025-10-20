@@ -267,16 +267,19 @@ header h1 {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10000;
-    width: 60px;
-    height: 60px;
-    border-radius: 0;
-    font-size: 1.4rem;
+    width: 120px;
+    height: 40px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
     border: none;
-    border-bottom: 2px solid white;
-    background: none;
+    background: #333333;
     color: white;
+    text-align: center;
+    line-height: 1.2;
+    padding: 8px 12px;
 }
 
 .gyro-button.hidden {
