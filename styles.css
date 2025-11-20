@@ -261,28 +261,36 @@ header h1 {
 }
 
 /* Gyro Button über Speedometer */
-.gyro-button {
+button.gyro-button {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 10000;
-    width: 120px;
-    height: 40px;
+    z-index: 99999;
+    width: 300px;
+    height: 60px;
     border-radius: 8px;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
     transition: all 0.3s ease;
-    border: none;
-    background: #333333;
+    border: 2px solid #555;
+    background: #1a1a1a;
     color: white;
     text-align: center;
     line-height: 1.2;
     padding: 8px 12px;
+    backdrop-filter: blur(10px);
 }
 
-.gyro-button.hidden {
+button.gyro-button:hover {
+    background: #2a2a2a;
+    border-color: #777;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+button.gyro-button.hidden {
     opacity: 0;
     visibility: hidden;
     transform: scale(0.8);
@@ -708,13 +716,39 @@ header h1 {
 
 .trip-stats {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     font-size: 0.9rem;
+    margin-bottom: 10px;
 }
 
 .trip-stat {
     text-align: center;
+}
+
+.trip-times {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    font-size: 0.8rem;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trip-time {
+    text-align: center;
+}
+
+.trip-time-label {
+    color: #888;
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+}
+
+.trip-time-value {
+    color: white;
+    font-weight: 500;
 }
 
 .trip-stat-label {
@@ -832,8 +866,14 @@ header h1 {
     }
     
     .trip-stats {
+        grid-template-columns: repeat(2, 1fr);
         gap: 8px;
         font-size: 0.8rem;
+    }
+    
+    .trip-times {
+        font-size: 0.7rem;
+        gap: 8px;
     }
     
     .btn-delete {

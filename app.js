@@ -67,7 +67,8 @@ class SpeedometerApp {
             elevationGain: 0,
             startLocation: 'Unbekannt',
             endLocation: 'Unbekannt',
-            positions: []
+            positions: [],
+            targetDistance: null // Zielentfernung in km
         };
 
         // Timing System
@@ -277,6 +278,39 @@ class SpeedometerApp {
         console.log('Alle Bestzeiten gelöscht');
     }
 
+    setTargetDistance() {
+        const currentTarget = this.tripStats.targetDistance !== null ? this.tripStats.targetDistance.toFixed(2) : '';
+        const message = currentTarget 
+            ? `Aktuelle Zielentfernung: ${currentTarget} km\n\nGeben Sie eine neue Zielentfernung in km ein (leer lassen zum Entfernen):`
+            : 'Geben Sie eine Zielentfernung in km ein:';
+        
+        const input = prompt(message, currentTarget);
+        
+        if (input === null) {
+            // Benutzer hat abgebrochen
+            return;
+        }
+        
+        if (input.trim() === '') {
+            // Leere Eingabe = Zielentfernung entfernen
+            this.tripStats.targetDistance = null;
+            this.updateUI();
+            this.updateStatus('Zielentfernung entfernt', '');
+            return;
+        }
+        
+        const targetDistance = parseFloat(input.replace(',', '.'));
+        
+        if (isNaN(targetDistance) || targetDistance <= 0) {
+            alert('Bitte geben Sie eine gültige positive Zahl ein.');
+            return;
+        }
+        
+        this.tripStats.targetDistance = targetDistance;
+        this.updateUI();
+        this.updateStatus(`Zielentfernung gesetzt: ${targetDistance.toFixed(2)} km`, '');
+    }
+
     bindEvents() {
         // Standard Buttons
         const startBtn = document.getElementById('startBtn');
@@ -288,6 +322,13 @@ class SpeedometerApp {
         if (resetBtn) resetBtn.addEventListener('click', () => this.resetTrip());
         if (endBtn) endBtn.addEventListener('click', () => this.endTrip());
         if (historyBtn) historyBtn.addEventListener('click', () => this.showHistoryModal());
+        
+        // Distance click event - Zielentfernung setzen
+        const distanceElement = document.getElementById('distance');
+        if (distanceElement) {
+            distanceElement.style.cursor = 'pointer';
+            distanceElement.addEventListener('click', () => this.setTargetDistance());
+        }
         
         // Simulation Event Listeners
         const simulateBtn = document.getElementById('simulateBtn');
@@ -482,7 +523,8 @@ class SpeedometerApp {
             elevationGain: 0,
             startLocation: 'Unbekannt',
             endLocation: 'Unbekannt',
-            positions: []
+            positions: [],
+            targetDistance: this.tripStats?.targetDistance || null // Behalte Zielentfernung beim Neustart
         };
 
         // Residual Image bei Trip-Start leeren
@@ -1209,7 +1251,11 @@ class SpeedometerApp {
         // Statistiken
         document.getElementById('avgSpeed').innerHTML = `${Math.round(this.tripStats.avgSpeed)} <span class="unit">km/h</span>`;
         document.getElementById('maxSpeed').innerHTML = `${Math.round(this.tripStats.maxSpeed)} <span class="unit">km/h</span>`;
-        document.getElementById('distance').innerHTML = `${this.tripStats.totalDistance.toFixed(2)} <span class="unit">km</span>`;
+        
+        // Distanz-Anzeige mit Zielentfernung, falls gesetzt
+        let distanceHTML = `${this.tripStats.totalDistance.toFixed(2)} <span class="unit">km</span>`;
+        document.getElementById('distance').innerHTML = distanceHTML;
+        
         document.getElementById('elevation').innerHTML = `${Math.round(this.tripStats.elevation)} <span class="unit">m</span>`;
         
         // Min/Max Höhenwerte anzeigen
@@ -1230,12 +1276,24 @@ class SpeedometerApp {
         const totalPauseTime = this.totalPauseTime + currentPauseTime;
         
         // Prüfe ob startTime existiert
+        let durationHTML = '00:00';
         if (this.tripStats.startTime) {
             const duration = this.formatDuration(Date.now() - this.tripStats.startTime.getTime() - totalPauseTime);
-            document.getElementById('duration').textContent = duration;
-        } else {
-            document.getElementById('duration').textContent = '00:00:00';
+            durationHTML = duration;
         }
+        
+        // Verbleibende Zeit neben der Zeit anzeigen, falls Zielentfernung gesetzt
+        if (this.tripStats.targetDistance !== null && this.tripStats.targetDistance > 0) {
+            const remainingDistance = Math.max(0, this.tripStats.targetDistance - this.tripStats.totalDistance);
+            // Verwende Durchschnittsgeschwindigkeit, oder 60 km/h als Fallback bei Division durch 0
+            const avgSpeed = this.tripStats.avgSpeed > 0 ? this.tripStats.avgSpeed : 60;
+            const remainingHours = remainingDistance / avgSpeed;
+            const remainingMilliseconds = remainingHours * 3600 * 1000;
+            const remainingTimeFormatted = this.formatDuration(remainingMilliseconds);
+            durationHTML = `<span style="font-size: 0.6em; opacity: 0.8; margin-left: 0.5em;">Done:</span> ${durationHTML} <span style="font-size: 0.6em; opacity: 0.8; margin-left: 0.5em;"> To Go:</span> ${remainingTimeFormatted}`;
+        }
+        
+        document.getElementById('duration').innerHTML = durationHTML;
 
         // Speedometer-Animation
         const speedometer = document.querySelector('.speedometer');
@@ -1253,9 +1311,8 @@ class SpeedometerApp {
         const seconds = Math.floor(milliseconds / 1000);
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
         
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
 
     async endTrip() {
@@ -1352,7 +1409,8 @@ class SpeedometerApp {
             elevationGain: 0,
             startLocation: 'Unbekannt',
             endLocation: 'Unbekannt',
-            positions: []
+            positions: [],
+            targetDistance: this.tripStats?.targetDistance || null // Behalte Zielentfernung beim Neustart
         };
         
         // Residual Image bei Trip-Restart leeren
@@ -1423,7 +1481,8 @@ class SpeedometerApp {
             elevationGain: 0,
             startLocation: 'Unbekannt',
             endLocation: 'Unbekannt',
-            positions: []
+            positions: [],
+            targetDistance: null // Zurücksetzen beim vollständigen Reset
         };
 
         // Reset Timing System
@@ -1452,7 +1511,7 @@ class SpeedometerApp {
         document.getElementById('minElevation').innerHTML = '0 <span class="unit">m</span>';
         document.getElementById('maxElevation').innerHTML = '0 <span class="unit">m</span>';
         document.getElementById('elevationGain').innerHTML = '+0 <span class="unit">m</span>';
-        document.getElementById('duration').textContent = '00:00:00';
+        document.getElementById('duration').textContent = '00:00';
         
         const speedometer = document.querySelector('.speedometer');
         speedometer.classList.remove('tracking');
@@ -1476,7 +1535,8 @@ class SpeedometerApp {
             elevationGain: 0,
             startLocation: 'Unbekannt',
             endLocation: 'Unbekannt',
-            positions: []
+            positions: [],
+            targetDistance: null // Zurücksetzen beim vollständigen Reset
         };
 
         // Reset Timing System
@@ -1514,7 +1574,7 @@ class SpeedometerApp {
         document.getElementById('minElevation').innerHTML = '0 <span class="unit">m</span>';
         document.getElementById('maxElevation').innerHTML = '0 <span class="unit">m</span>';
         document.getElementById('elevationGain').innerHTML = '+0 <span class="unit">m</span>';
-        document.getElementById('duration').textContent = '00:00:00';
+        document.getElementById('duration').textContent = '00:00';
         
         const speedometer = document.querySelector('.speedometer');
         speedometer.classList.remove('tracking');
@@ -1806,10 +1866,10 @@ class SpeedometerApp {
         historyList.innerHTML = trips.map(trip => `
             <div class="trip-item" data-trip-id="${trip.id}">
                 <div class="trip-header">
-                    <div class="trip-date">${new Date(trip.created_at).toLocaleDateString('de-DE')}</div>
+                    <div class="trip-date">${new Date(trip.created_at).toLocaleDateString('de-DE')} ${new Date(trip.created_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}</div>
                     <button class="btn-delete" data-trip-id="${trip.id}" title="Trip löschen">✕</button>
                 </div>
-                <div class="trip-route">${trip.start_location} → ${trip.end_location}</div>
+                <div class="trip-route">${trip.start_location || 'Unbekannt'} → ${trip.end_location || 'Unbekannt'}</div>
                 <div class="trip-stats">
                     <div class="trip-stat">
                         <div class="trip-stat-label">Distanz</div>
@@ -1824,8 +1884,36 @@ class SpeedometerApp {
                         <div class="trip-stat-value">${Math.round(trip.max_speed)} km/h</div>
                     </div>
                     <div class="trip-stat">
+                        <div class="trip-stat-label">Ø</div>
+                        <div class="trip-stat-value">${Math.round(trip.avg_speed)} km/h</div>
+                    </div>
+                </div>
+                <div class="trip-stats">
+                    <div class="trip-stat">
                         <div class="trip-stat-label">Höhe</div>
+                        <div class="trip-stat-value">${Math.round(trip.elevation || 0)} m</div>
+                    </div>
+                    <div class="trip-stat">
+                        <div class="trip-stat-label">Min</div>
+                        <div class="trip-stat-value">${Math.round(trip.min_elevation || 0)} m</div>
+                    </div>
+                    <div class="trip-stat">
+                        <div class="trip-stat-label">Max</div>
+                        <div class="trip-stat-value">${Math.round(trip.max_elevation || 0)} m</div>
+                    </div>
+                    <div class="trip-stat">
+                        <div class="trip-stat-label">+/-</div>
                         <div class="trip-stat-value">+${Math.round(trip.elevation_gain || 0)} m</div>
+                    </div>
+                </div>
+                <div class="trip-times">
+                    <div class="trip-time">
+                        <div class="trip-time-label">Start</div>
+                        <div class="trip-time-value">${trip.start_time ? new Date(trip.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'Unbekannt'}</div>
+                    </div>
+                    <div class="trip-time">
+                        <div class="trip-time-label">Ende</div>
+                        <div class="trip-time-value">${trip.end_time ? new Date(trip.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'Unbekannt'}</div>
                     </div>
                 </div>
             </div>

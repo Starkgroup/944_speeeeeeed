@@ -74,7 +74,7 @@
                     <canvas id="residualCanvas" class="residual-canvas"></canvas>
                     
                     <!-- Gyro Button (über Speedometer) -->
-                    <button id="enable" class="btn btn-motion gyro-button" title="Enable Motion Sensors">Read Out Gyro</button>
+                    <button id="enable" class="btn btn-motion gyro-button" title="Enable Motion Sensors">Agree to Read Out Gyro</button>
                 </div>
             </div>
 
@@ -98,7 +98,7 @@
             <!-- Time Row -->
             <div class="stats-row">
                 <div class="stat-card">
-                    <div class="stat-value" id="duration">00:00:00</div>
+                    <div class="stat-value" id="duration">00:00</div>
                 </div>
             </div>
 
@@ -156,7 +156,7 @@
                     </div>
                     <div class="modal-body">
                         <div class="history-controls">
-                            <button id="clearAllBtn" class="btn-clear-all" onclick="app.clearAllTrips()" title="Alle Trips löschen">Alle löschen</button>
+                            <button id="clearAllBtn" class="btn-clear-all" onclick="app.clearAllTrips()" title="Alle Trips löschen">Alle Trips löschen</button>
                             <button id="clearBestTimesBtn" class="btn-clear-best" onclick="app.clearBestTimes()" title="Bestzeiten löschen">Bestzeiten löschen</button>
                         </div>
                         <div class="history-list" id="historyList">
