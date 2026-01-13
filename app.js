@@ -1290,7 +1290,7 @@ class SpeedometerApp {
             const remainingHours = remainingDistance / avgSpeed;
             const remainingMilliseconds = remainingHours * 3600 * 1000;
             const remainingTimeFormatted = this.formatDuration(remainingMilliseconds);
-            durationHTML = `<span style="font-size: 0.6em; opacity: 0.8; margin-left: 0.5em;">Done:</span> ${durationHTML} <span style="font-size: 0.6em; opacity: 0.8; margin-left: 0.5em;"> To Go:</span> ${remainingTimeFormatted}`;
+            durationHTML = `${durationHTML}<span style="font-size: 0.6em; opacity: 0.8; margin-left: 0.5em;"> done ... to go </span> ${remainingTimeFormatted}`;
         }
         
         document.getElementById('duration').innerHTML = durationHTML;
