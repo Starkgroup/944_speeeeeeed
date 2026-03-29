@@ -1,128 +1,37 @@
-# 🚗 Speedometer GPS Tracker
+# Project Name
 
-Eine moderne, mobile Web-Anwendung für GPS-basiertes Geschwindigkeitstracking mit schönem Speedometer-Design und Trip-Statistiken.
+9443 Speeeeeed runtime project managed via PM2 in `/Users/chap/webserver/944_speeeeeeed`.
 
-## ✨ Features
+## About
+9443 Speeeeeed is a static web project located at /Users/chap/webserver/944_speeeeeeed. It is operated through PM2 and mapped to deployment mode `static-copy` where applicable. Use this README for repeatable setup, configuration, and PM2-aligned runtime operations.
 
-- **Live Speedometer**: Rundes, animiertes Speedometer (0-300 km/h)
-- **GPS-Tracking**: Präzise Geschwindigkeitsmessung mit iPhone GPS
-- **Trip-Statistiken**: 
-  - Aktuelle Geschwindigkeit
-  - Durchschnittsgeschwindigkeit
-  - Höchstgeschwindigkeit
-  - Zurückgelegte Distanz
-  - Höhenangabe
-  - Trip-Dauer
-- **OSM-Integration**: Automatische Erkennung von Start- und Zielpunkten
-- **SQLite-Datenbank**: Lokale Speicherung der Trip-Statistiken
-- **Mobile Optimiert**: Responsive Design für iPhone und andere mobile Geräte
-- **Dunkles Design**: Modernes Dark Mode UI
-- **PWA-Ready**: Installierbar als Web-App
+## Features
+- Serves the 9443 Speeeeeed static web experience from sanitized published artifacts.
+- Uses the hardened secure static server with security headers and blocked sensitive paths.
+- Deployment mode is static-copy, aligned with PM2-managed runtime startup.
 
-## 🚀 Installation & Nutzung
+## Install and Run
 
-1. **Dateien herunterladen**: Alle Dateien in einen Ordner kopieren
-2. **Webserver starten**: 
-   ```bash
-   # Mit Python
-   python -m http.server 9443
-   
-   # Mit Node.js
-   npx serve . -p 9443
-   ```
-3. **Im Browser öffnen**: `http://localhost:9443`
-4. **GPS-Berechtigung erteilen**: Beim ersten Start wird nach GPS-Zugriff gefragt
-5. **Trip starten**: "Trip Starten" Button drücken
+### Prerequisites
+- Node.js (LTS) for deployment tooling and secure static server runtime.
 
-## 📱 Mobile Nutzung
+### Setup
+1. `cd /Users/chap/webserver/944_speeeeeeed`
+2. Provide required runtime environment variables (no explicit template file detected in this root).
 
-- **iPhone**: Safari öffnen und Seite zu Home-Bildschirm hinzufügen
-- **Android**: Chrome öffnen und "Zum Startbildschirm hinzufügen"
-- **PWA**: Die App kann als native App installiert werden
-
-## 🛠 Technische Details
-
-### Verwendete Technologien
-- **HTML5**: Geolocation API für GPS-Zugriff
-- **CSS3**: Moderne Animationen und Responsive Design
-- **JavaScript ES6+**: Klassen-basierte Architektur
-- **SQLite**: Lokale Datenbank mit sql.js
-- **OpenStreetMap**: Nominatim API für Standort-Namen
-- **PWA**: Service Worker und Manifest
-
-### GPS-Genauigkeit
-- **Hochpräzise**: `enableHighAccuracy: true`
-- **Update-Rate**: 1 Sekunde
-- **Fallback**: Berechnung über Distanz/Zeit wenn GPS-Geschwindigkeit nicht verfügbar
-
-### Datenbank-Schema
-```sql
-CREATE TABLE trips (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    start_time TEXT NOT NULL,
-    end_time TEXT,
-    duration TEXT,
-    total_distance REAL,
-    max_speed REAL,
-    avg_speed REAL,
-    elevation REAL,
-    start_location TEXT,
-    end_location TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
+### Running
+```bash
+# Build/start commands (project-local)
+node -e "const { deployRepo } = require('/Users/chap/webserver/990_scripts/9903_gitpull/deployment'); deployRepo('/Users/chap/webserver/944_speeeeeeed').then(console.log).catch(console.error);"
+node /Users/chap/webserver/990_scripts/9903_gitpull/secure-static-server.js --root '/Users/chap/webserver/.published/9443-speeeeeed' --port '9443' --spa
 ```
 
-## 🎨 UI-Features
-
-- **Speedometer**: Animiertes, rundes Design mit Farbverlauf
-- **Statistik-Karten**: Übersichtliche Darstellung aller Werte
-- **Editable Locations**: Start- und Zielpunkte können bearbeitet werden
-- **Trip-Historie**: Übersicht aller gespeicherten Trips
-- **Responsive**: Optimiert für alle Bildschirmgrößen
-
-## 🔧 Anpassungen
-
-### Geschwindigkeitsbereich ändern
-In `app.js` Zeile 45:
-```javascript
-const progress = (speed / 300) * 100; // 300 km/h Maximum
+```bash
+# PM2 production-equivalent command
+pm2 start '/bin/bash' --name '9443 Speeeeeed' --cwd '/Users/chap/webserver/.published/9443-speeeeeed' --interpreter 'none' -- '-lc' 'node '\''/Users/chap/webserver/990_scripts/9903_gitpull/secure-static-server.js'\'' --root '\''/Users/chap/webserver/.published/9443-speeeeeed'\'' --port '\''9443'\'' --spa'
 ```
 
-### Update-Intervall anpassen
-In `app.js` Zeile 78:
-```javascript
-maximumAge: 1000 // 1 Sekunde
+```bash
+# Raw PM2 runtime command (from pm2 jlist)
+/bin/bash -lc node '/Users/chap/webserver/990_scripts/9903_gitpull/secure-static-server.js' --root '/Users/chap/webserver/.published/9443-speeeeeed' --port '9443' --spa
 ```
-
-### OSM-Lookup anpassen
-In `app.js` Zeile 200:
-```javascript
-const response = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
-);
-```
-
-## 📊 Datenschutz
-
-- **Lokale Speicherung**: Alle Daten bleiben auf dem Gerät
-- **Keine Server**: Keine Übertragung an externe Server (außer OSM für Standort-Namen)
-- **GPS-Daten**: Werden nur temporär für Berechnungen verwendet
-
-## 🐛 Bekannte Probleme
-
-- **HTTPS erforderlich**: GPS funktioniert nur über HTTPS oder localhost
-- **Batterieverbrauch**: Kontinuierliches GPS-Tracking verbraucht Akku
-- **Genauigkeit**: In Gebäuden oder Tunneln kann GPS ungenau sein
-
-## 📝 Lizenz
-
-MIT License - Frei verwendbar für private und kommerzielle Projekte.
-
-## 🤝 Beitragen
-
-Verbesserungen und Bug-Fixes sind willkommen! Einfach einen Pull Request erstellen.
-
----
-
-**Hinweis**: Diese App funktioniert am besten auf mobilen Geräten mit aktiviertem GPS. Für beste Ergebnisse sollte die App im Vollbildmodus verwendet werden.
-
