@@ -93,6 +93,40 @@ header h1 {
     position: relative;
 }
 
+.gyro-compass-value {
+    position: absolute;
+    z-index: 12;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+}
+
+.gyro-north {
+    top: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.gyro-east {
+    right: 3%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.gyro-south {
+    bottom: 4%;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.gyro-west {
+    left: 3%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .speed-value {
     font-size: 4rem;
     font-weight: 700;
@@ -143,7 +177,7 @@ header h1 {
     z-index: 1;
     pointer-events: none;
     transition: all 0.1s ease-out;
-    opacity: 0.05; /* Fast unsichtbar, wird dynamisch von JavaScript gesetzt */
+    opacity: 0.18;
 }
 
 .blob-core {
@@ -262,11 +296,11 @@ header h1 {
 
 /* Gyro Button über Speedometer */
 button.gyro-button {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 99999;
+    z-index: 100000;
     width: 300px;
     height: 60px;
     border-radius: 8px;
@@ -293,7 +327,7 @@ button.gyro-button:hover {
 button.gyro-button.hidden {
     opacity: 0;
     visibility: hidden;
-    transform: scale(0.8);
+    transform: translate(-50%, -50%) scale(0.85);
 }
 
 /* Timing Cards */
@@ -302,12 +336,26 @@ button.gyro-button.hidden {
     transition: all 0.3s ease;
 }
 
-.timing-card.ready {
-    border-bottom: 2px solid #2d5a2d;
+.timing-card.ready,
+.timing-card.timing-ready .stat-value {
+    color: #5cbcff;
 }
 
-.timing-card.tracking {
-    border-bottom: 2px solid #8b0000;
+.timing-card.tracking,
+.timing-card.timing-tracking .stat-value {
+    color: #ffd24d;
+}
+
+.timing-card.timing-better .stat-value {
+    color: #56e38f;
+}
+
+.timing-card.timing-worse .stat-value {
+    color: #ff6262;
+}
+
+.timing-card.tracking,
+.timing-card.timing-tracking {
     animation: timingPulse 1s infinite;
 }
 
@@ -436,6 +484,16 @@ button.gyro-button.hidden {
 .btn-history:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.btn-flash-green {
+    color: #56e38f !important;
+    text-shadow: 0 0 14px rgba(86, 227, 143, 0.85);
+}
+
+.btn-flash-orange {
+    color: #ff9f43 !important;
+    text-shadow: 0 0 14px rgba(255, 159, 67, 0.85);
 }
 
 /* Simulation Controls */
@@ -993,5 +1051,4 @@ button.gyro-button.hidden {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
-
 

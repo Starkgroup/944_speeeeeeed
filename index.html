@@ -63,6 +63,10 @@
                         <div class="speed-value" id="currentSpeed">0</div>
                         <div class="speed-unit">km/h</div>
                     </div>
+                    <div class="gyro-compass-value gyro-north" id="gyroNorthMax">N 0.00g</div>
+                    <div class="gyro-compass-value gyro-east" id="gyroEastMax">E 0.00g</div>
+                    <div class="gyro-compass-value gyro-south" id="gyroSouthMax">S 0.00g</div>
+                    <div class="gyro-compass-value gyro-west" id="gyroWestMax">W 0.00g</div>
                     <div class="speedometer-ring">
                         <div class="speedometer-progress" id="speedProgress"></div>
                     </div>
@@ -138,7 +142,7 @@
                 </div>
             </div>
             
-            <!-- Speed Simulation Button 
+            <!-- Speed Simulation Button
             <div class="simulation-controls">
                 <button id="simulateBtn" class="btn btn-simulate" title="Geschwindigkeit simulieren">🚗</button>
                 <div class="speed-slider-container">
@@ -146,6 +150,7 @@
                     <div class="speed-display" id="simulatedSpeed">0 km/h</div>
                 </div>
             </div>
+            -->
 
             <!-- Trip History Modal -->
             <div id="historyModal" class="modal">
@@ -172,8 +177,6 @@
     </div>
 
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/sql.js@1.8.0/dist/sql-wasm.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
