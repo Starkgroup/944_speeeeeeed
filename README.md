@@ -60,3 +60,13 @@ node /Users/trixie/webserver/990_scripts/9903_git-pull/secure-static-server.js -
 - Validation:
   - `node --check` passed for `app.js`, `logic.js`, `server.js`,
   - `npm test` passed (9/9 unit tests).
+
+## UI Follow-up Update (2026-04-02)
+- Reinstated speed-dependent tachometer color coding in [`app.js`](/Users/trixie/webserver/900_html/9020_speeeeeeed/app.js):
+  - dynamic color mapped by speed,
+  - speed number glow follows speed color,
+  - progress ring color follows speed color.
+- Adjusted gyro max overlays as requested:
+  - removed literal direction labels (values are now number-only),
+  - set overlay opacity to `0.7` in [`styles.css`](/Users/trixie/webserver/900_html/9020_speeeeeeed/styles.css).
+- Rolled back gyro indicator feel to a softer previous look by reducing motion-blob visual intensity in [`app.js`](/Users/trixie/webserver/900_html/9020_speeeeeeed/app.js) and [`styles.css`](/Users/trixie/webserver/900_html/9020_speeeeeeed/styles.css).

@@ -15,6 +15,9 @@
 - [x] Add unit tests for pause/resume decisions, timing engine flows, record aggregation, and pause-time exclusion.
 - [x] Run verification (`npm test`) and syntax checks.
 - [x] Investigate slow-feel issue: removed history rendering from 24 Hz loop and added GPS/UI runtime rate diagnostics.
+- [x] Reinstated speed-dependent color coding on tachometer and speed readout.
+- [x] Updated gyro max overlay style to numbers-only at 0.7 opacity.
+- [x] Rolled gyro indicator visual intensity back toward prior layout/feel.
 
 ## In Progress
 - [ ] Browser-level integration checks with Playwright (blocked locally: Playwright not installed in Python env and sandbox disallows local port binding in this run).

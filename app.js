@@ -813,13 +813,13 @@ class SpeedometerApp {
     if (!blob) return;
 
     const strength = Math.min(1, this.motionData.magnitude * 1.4);
-    const size = 12 + (strength * 120);
+    const size = 18 + (strength * 88);
     const x = Math.max(-220, Math.min(220, this.motionData.x * -16));
     const y = Math.max(-220, Math.min(220, this.motionData.z * 16));
 
     blob.style.width = `${size}px`;
     blob.style.height = `${size}px`;
-    blob.style.opacity = `${0.1 + (strength * 0.85)}`;
+    blob.style.opacity = `${0.06 + (strength * 0.66)}`;
     blob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
   }
 
@@ -878,7 +878,12 @@ class SpeedometerApp {
         elevationDiffM: 0
       };
 
-    this.dom.currentSpeed.textContent = Math.round(source.currentSpeedKmh || 0);
+    const speedKmh = source.currentSpeedKmh || 0;
+    const speedColor = this.getSpeedColor(speedKmh);
+
+    this.dom.currentSpeed.textContent = Math.round(speedKmh);
+    this.dom.currentSpeed.style.color = speedColor;
+    this.dom.currentSpeed.style.textShadow = `0 0 18px ${speedColor}`;
     this.dom.avgSpeed.innerHTML = `${Math.round(source.avgSpeedKmh || 0)} <span class="unit">km/h</span>`;
     this.dom.maxSpeed.innerHTML = `${Math.round(source.maxSpeedKmh || 0)} <span class="unit">km/h</span>`;
     this.dom.distance.innerHTML = `${(source.totalDistanceKm || 0).toFixed(2)} <span class="unit">km</span>`;
@@ -891,7 +896,7 @@ class SpeedometerApp {
     this.renderTimingCards();
     this.renderButtons();
     this.renderGyroCompass();
-    this.renderSpeedRing(source.currentSpeedKmh || 0);
+    this.renderSpeedRing(speedKmh, speedColor);
   }
 
   renderButtons() {
@@ -916,17 +921,23 @@ class SpeedometerApp {
 
   renderGyroCompass() {
     const { n, s, e, w } = this.motionData.extremaG;
-    this.dom.gyroN.textContent = `N ${n.toFixed(2)}g`;
-    this.dom.gyroS.textContent = `S ${s.toFixed(2)}g`;
-    this.dom.gyroE.textContent = `E ${e.toFixed(2)}g`;
-    this.dom.gyroW.textContent = `W ${w.toFixed(2)}g`;
+    this.dom.gyroN.textContent = `${n.toFixed(2)}g`;
+    this.dom.gyroS.textContent = `${s.toFixed(2)}g`;
+    this.dom.gyroE.textContent = `${e.toFixed(2)}g`;
+    this.dom.gyroW.textContent = `${w.toFixed(2)}g`;
   }
 
-  renderSpeedRing(speedKmh) {
+  getSpeedColor(speedKmh) {
+    const clamped = Math.max(0, Math.min(300, speedKmh || 0));
+    const hue = 205 - (clamped / 300) * 205;
+    return `hsl(${hue}, 95%, 62%)`;
+  }
+
+  renderSpeedRing(speedKmh, speedColor) {
     if (!this.dom.speedProgress) return;
     const clamped = Math.max(0, Math.min(300, speedKmh));
     const deg = (clamped / 300) * 360;
-    this.dom.speedProgress.style.background = `conic-gradient(from 0deg, #4b4b4b 0deg, #4b4b4b ${deg}deg, #1a1a1a ${deg}deg, #1a1a1a 360deg)`;
+    this.dom.speedProgress.style.background = `conic-gradient(from 0deg, ${speedColor} 0deg, ${speedColor} ${deg}deg, #1a1a1a ${deg}deg, #1a1a1a 360deg)`;
   }
 
   renderTimingCards() {
